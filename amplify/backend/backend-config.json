@@ -82,11 +82,6 @@
     }
   },
   "function": {
-    "authservicesPostConfirmation": {
-      "build": true,
-      "providerPlugin": "awscloudformation",
-      "service": "Lambda"
-    },
     "myTutorialV2AuthPostConfirmation": {
       "build": true,
       "providerPlugin": "awscloudformation",
@@ -94,30 +89,6 @@
     }
   },
   "parameters": {
-    "AMPLIFY_function_authservicesPostConfirmation_GROUP": {
-      "usedBy": [
-        {
-          "category": "function",
-          "resourceName": "authservicesPostConfirmation"
-        }
-      ]
-    },
-    "AMPLIFY_function_authservicesPostConfirmation_deploymentBucketName": {
-      "usedBy": [
-        {
-          "category": "function",
-          "resourceName": "authservicesPostConfirmation"
-        }
-      ]
-    },
-    "AMPLIFY_function_authservicesPostConfirmation_s3Key": {
-      "usedBy": [
-        {
-          "category": "function",
-          "resourceName": "authservicesPostConfirmation"
-        }
-      ]
-    },
     "AMPLIFY_function_myTutorialV2AuthPostConfirmation_GROUP": {
       "usedBy": [
         {

@@ -21,13 +21,6 @@ export type AmplifyDependentResourcesAttributes = {
     }
   },
   "function": {
-    "authservicesPostConfirmation": {
-      "Arn": "string",
-      "LambdaExecutionRole": "string",
-      "LambdaExecutionRoleArn": "string",
-      "Name": "string",
-      "Region": "string"
-    },
     "myTutorialV2AuthPostConfirmation": {
       "Arn": "string",
       "LambdaExecutionRole": "string",
