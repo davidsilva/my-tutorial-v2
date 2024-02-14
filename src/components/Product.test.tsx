@@ -52,7 +52,7 @@ const mockProduct: ProductType = {
   id: "1",
   name: "Test Product",
   description: "This is a test product",
-  price: "9.99",
+  price: 999,
   isArchived: false,
   image: "test-product.jpg",
   reviews: {

@@ -9,7 +9,7 @@ import { GraphQLError } from "graphql";
 const initialValues = {
   name: "",
   description: "",
-  price: "",
+  price: 0,
   image: undefined,
 };
 

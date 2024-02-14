@@ -29,7 +29,7 @@ vi.mock("../hooks/useGetProduct", () => {
       product: {
         name: "Test Product",
         description: "Test Description",
-        price: "10.99",
+        price: 1099,
         id: "372db325-5f72-49fa-ba8c-ab628c0ed470",
         image: "chucknorris.jpg",
       },
@@ -48,7 +48,7 @@ const { graphqlMock } = vi.hoisted(() => {
             updateProduct: {
               name: "Test Product",
               description: "New Test Description",
-              price: "10.99",
+              price: 1099,
               id: "372db325-5f72-49fa-ba8c-ab628c0ed470",
               image: "chucknorris.jpg",
             },
@@ -85,7 +85,7 @@ const mockProduct = {
 const newValues = {
   name: "Test Product",
   description: "New Test Description",
-  price: "10.99",
+  price: 1099,
 };
 
 const fillInForm = async (
@@ -101,7 +101,7 @@ const fillInForm = async (
   const descriptionInput = screen.getByRole("textbox", {
     name: /description/i,
   });
-  const priceInput = screen.getByRole("textbox", { name: /price/i });
+  const priceInput = screen.getByRole("spinbutton", { name: /price/i });
 
   await user.clear(productNameInput);
   await user.type(productNameInput, productName);
@@ -137,7 +137,7 @@ describe("EditProduct", () => {
         id: "some-id",
         name: "some-name",
         description: "some-description",
-        price: "some-price",
+        price: 1099,
         isArchived: false,
         reviews: null,
         image: undefined,
@@ -156,7 +156,7 @@ describe("EditProduct", () => {
             updateProduct: {
               name: "Test Product",
               description: "New Test Description",
-              price: "10.99",
+              price: 1099,
               id: "372db325-5f72-49fa-ba8c-ab628c0ed470",
               image: "chucknorris.jpg",
             },
@@ -228,7 +228,7 @@ describe("EditProduct error handling: can't get product", () => {
             updateProduct: {
               name: "Test Product",
               description: "New Test Description",
-              price: "10.99",
+              price: 1099,
               id: "372db325-5f72-49fa-ba8c-ab628c0ed470",
               image: "chucknorris.jpg",
             },
@@ -263,7 +263,7 @@ describe("EditProduct error handling: can't update product", () => {
         id: "some-id",
         name: "some-name",
         description: "some-description",
-        price: "some-price",
+        price: 1099,
         isArchived: false,
         reviews: null,
         image: undefined,

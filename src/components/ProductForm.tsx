@@ -10,14 +10,14 @@ import { useState } from "react";
 interface OnFormSubmitValues {
   name: string;
   description: string;
-  price: string;
+  price: number;
   image: string;
 }
 
 type FormValues = {
   name: string;
   description: string;
-  price: string;
+  price: number;
   image?: string;
 };
 
@@ -35,7 +35,10 @@ type ProductFormProps = {
 const validationSchema = yup.object().shape({
   name: yup.string().required("Required"),
   description: yup.string().required("Required"),
-  price: yup.string().required("Required"),
+  price: yup
+    .number()
+    .required("Required")
+    .positive("Must be a positive number"),
 });
 
 const ProductForm: React.FC<ProductFormProps> = ({
@@ -70,6 +73,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
     onSubmit: (values, formikHelpers) => {
       const valuesWithImageKey: OnFormSubmitValues = {
         ...values,
+        price: Math.floor(values.price * 100),
         image: values.image || initialImageKey || "",
       };
       onFormSubmit(valuesWithImageKey, formikHelpers);
@@ -163,9 +167,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
       <Form.Group controlId="productPrice">
         <Form.Label>Price</Form.Label>
         <Form.Control
-          type="text"
+          type="number"
           name="price"
-          value={values.price || ""}
+          value={values.price || 0}
           onChange={handleChange}
           onBlur={handleBlur}
           isInvalid={!!errors.price && touched.price}

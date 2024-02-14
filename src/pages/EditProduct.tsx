@@ -26,7 +26,7 @@ const EditProduct = () => {
   const initialFormValues = {
     name: product?.name || "",
     description: product?.description || "",
-    price: product?.price || "",
+    price: product && product.price ? product.price / 100 : 0,
   };
 
   const onSubmit = async (values: FormikValues) => {

@@ -15,7 +15,7 @@ type Product
   id: ID!
   name: String!
   description: String
-  price: String
+  price: Int
   isArchived: Boolean
   reviews: [Review] @hasMany
   image: String

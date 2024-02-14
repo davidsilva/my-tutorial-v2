@@ -7,7 +7,7 @@ export type Product = {
   id: string,
   name: string,
   description?: string | null,
-  price?: string | null,
+  price?: number | null,
   isArchived?: boolean | null,
   reviews?: ModelReviewConnection | null,
   image?: string | null,
@@ -54,7 +54,7 @@ export type ModelProductFilterInput = {
   id?: ModelIDInput | null,
   name?: ModelStringInput | null,
   description?: ModelStringInput | null,
-  price?: ModelStringInput | null,
+  price?: ModelIntInput | null,
   isArchived?: ModelBooleanInput | null,
   image?: ModelStringInput | null,
   and?: Array< ModelProductFilterInput | null > | null,
@@ -118,6 +118,18 @@ export type ModelStringInput = {
   size?: ModelSizeInput | null,
 };
 
+export type ModelIntInput = {
+  ne?: number | null,
+  eq?: number | null,
+  le?: number | null,
+  lt?: number | null,
+  ge?: number | null,
+  gt?: number | null,
+  between?: Array< number | null > | null,
+  attributeExists?: boolean | null,
+  attributeType?: ModelAttributeTypes | null,
+};
+
 export type ModelBooleanInput = {
   ne?: boolean | null,
   eq?: boolean | null,
@@ -135,7 +147,7 @@ export type CreateProductInput = {
   id?: string | null,
   name: string,
   description?: string | null,
-  price?: string | null,
+  price?: number | null,
   isArchived?: boolean | null,
   image?: string | null,
 };
@@ -143,7 +155,7 @@ export type CreateProductInput = {
 export type ModelProductConditionInput = {
   name?: ModelStringInput | null,
   description?: ModelStringInput | null,
-  price?: ModelStringInput | null,
+  price?: ModelIntInput | null,
   isArchived?: ModelBooleanInput | null,
   image?: ModelStringInput | null,
   and?: Array< ModelProductConditionInput | null > | null,
@@ -155,7 +167,7 @@ export type UpdateProductInput = {
   id: string,
   name?: string | null,
   description?: string | null,
-  price?: string | null,
+  price?: number | null,
   isArchived?: boolean | null,
   image?: string | null,
 };
@@ -182,18 +194,6 @@ export type ModelReviewConditionInput = {
   not?: ModelReviewConditionInput | null,
   productReviewsId?: ModelIDInput | null,
   userReviewsId?: ModelIDInput | null,
-};
-
-export type ModelIntInput = {
-  ne?: number | null,
-  eq?: number | null,
-  le?: number | null,
-  lt?: number | null,
-  ge?: number | null,
-  gt?: number | null,
-  between?: Array< number | null > | null,
-  attributeExists?: boolean | null,
-  attributeType?: ModelAttributeTypes | null,
 };
 
 export type UpdateReviewInput = {
@@ -272,7 +272,7 @@ export type ModelSubscriptionProductFilterInput = {
   id?: ModelSubscriptionIDInput | null,
   name?: ModelSubscriptionStringInput | null,
   description?: ModelSubscriptionStringInput | null,
-  price?: ModelSubscriptionStringInput | null,
+  price?: ModelSubscriptionIntInput | null,
   isArchived?: ModelSubscriptionBooleanInput | null,
   image?: ModelSubscriptionStringInput | null,
   and?: Array< ModelSubscriptionProductFilterInput | null > | null,
@@ -309,6 +309,18 @@ export type ModelSubscriptionStringInput = {
   notIn?: Array< string | null > | null,
 };
 
+export type ModelSubscriptionIntInput = {
+  ne?: number | null,
+  eq?: number | null,
+  le?: number | null,
+  lt?: number | null,
+  ge?: number | null,
+  gt?: number | null,
+  between?: Array< number | null > | null,
+  in?: Array< number | null > | null,
+  notIn?: Array< number | null > | null,
+};
+
 export type ModelSubscriptionBooleanInput = {
   ne?: boolean | null,
   eq?: boolean | null,
@@ -321,18 +333,6 @@ export type ModelSubscriptionReviewFilterInput = {
   isArchived?: ModelSubscriptionBooleanInput | null,
   and?: Array< ModelSubscriptionReviewFilterInput | null > | null,
   or?: Array< ModelSubscriptionReviewFilterInput | null > | null,
-};
-
-export type ModelSubscriptionIntInput = {
-  ne?: number | null,
-  eq?: number | null,
-  le?: number | null,
-  lt?: number | null,
-  ge?: number | null,
-  gt?: number | null,
-  between?: Array< number | null > | null,
-  in?: Array< number | null > | null,
-  notIn?: Array< number | null > | null,
 };
 
 export type ModelSubscriptionUserFilterInput = {
@@ -383,7 +383,7 @@ export type ListProductsWithReviewsQuery = {
       id: string,
       name: string,
       description?: string | null,
-      price?: string | null,
+      price?: number | null,
       createdAt: string,
       updatedAt: string,
       owner?: string | null,
@@ -421,7 +421,7 @@ export type GetProductWithReviewsQuery = {
     id: string,
     name: string,
     description?: string | null,
-    price?: string | null,
+    price?: number | null,
     isArchived?: boolean | null,
     image?: string | null,
     reviews?:  {
@@ -491,7 +491,7 @@ export type CreateProductMutation = {
     id: string,
     name: string,
     description?: string | null,
-    price?: string | null,
+    price?: number | null,
     isArchived?: boolean | null,
     reviews?:  {
       __typename: "ModelReviewConnection",
@@ -515,7 +515,7 @@ export type UpdateProductMutation = {
     id: string,
     name: string,
     description?: string | null,
-    price?: string | null,
+    price?: number | null,
     isArchived?: boolean | null,
     reviews?:  {
       __typename: "ModelReviewConnection",
@@ -539,7 +539,7 @@ export type DeleteProductMutation = {
     id: string,
     name: string,
     description?: string | null,
-    price?: string | null,
+    price?: number | null,
     isArchived?: boolean | null,
     reviews?:  {
       __typename: "ModelReviewConnection",
@@ -566,7 +566,7 @@ export type CreateReviewMutation = {
       id: string,
       name: string,
       description?: string | null,
-      price?: string | null,
+      price?: number | null,
       isArchived?: boolean | null,
       image?: string | null,
       createdAt: string,
@@ -609,7 +609,7 @@ export type UpdateReviewMutation = {
       id: string,
       name: string,
       description?: string | null,
-      price?: string | null,
+      price?: number | null,
       isArchived?: boolean | null,
       image?: string | null,
       createdAt: string,
@@ -652,7 +652,7 @@ export type DeleteReviewMutation = {
       id: string,
       name: string,
       description?: string | null,
-      price?: string | null,
+      price?: number | null,
       isArchived?: boolean | null,
       image?: string | null,
       createdAt: string,
@@ -760,7 +760,7 @@ export type GetProductQuery = {
     id: string,
     name: string,
     description?: string | null,
-    price?: string | null,
+    price?: number | null,
     isArchived?: boolean | null,
     reviews?:  {
       __typename: "ModelReviewConnection",
@@ -787,7 +787,7 @@ export type ListProductsQuery = {
       id: string,
       name: string,
       description?: string | null,
-      price?: string | null,
+      price?: number | null,
       isArchived?: boolean | null,
       image?: string | null,
       createdAt: string,
@@ -811,7 +811,7 @@ export type GetReviewQuery = {
       id: string,
       name: string,
       description?: string | null,
-      price?: string | null,
+      price?: number | null,
       isArchived?: boolean | null,
       image?: string | null,
       createdAt: string,
@@ -922,7 +922,7 @@ export type OnCreateProductSubscription = {
     id: string,
     name: string,
     description?: string | null,
-    price?: string | null,
+    price?: number | null,
     isArchived?: boolean | null,
     reviews?:  {
       __typename: "ModelReviewConnection",
@@ -946,7 +946,7 @@ export type OnUpdateProductSubscription = {
     id: string,
     name: string,
     description?: string | null,
-    price?: string | null,
+    price?: number | null,
     isArchived?: boolean | null,
     reviews?:  {
       __typename: "ModelReviewConnection",
@@ -970,7 +970,7 @@ export type OnDeleteProductSubscription = {
     id: string,
     name: string,
     description?: string | null,
-    price?: string | null,
+    price?: number | null,
     isArchived?: boolean | null,
     reviews?:  {
       __typename: "ModelReviewConnection",
@@ -997,7 +997,7 @@ export type OnCreateReviewSubscription = {
       id: string,
       name: string,
       description?: string | null,
-      price?: string | null,
+      price?: number | null,
       isArchived?: boolean | null,
       image?: string | null,
       createdAt: string,
@@ -1040,7 +1040,7 @@ export type OnUpdateReviewSubscription = {
       id: string,
       name: string,
       description?: string | null,
-      price?: string | null,
+      price?: number | null,
       isArchived?: boolean | null,
       image?: string | null,
       createdAt: string,
@@ -1083,7 +1083,7 @@ export type OnDeleteReviewSubscription = {
       id: string,
       name: string,
       description?: string | null,
-      price?: string | null,
+      price?: number | null,
       isArchived?: boolean | null,
       image?: string | null,
       createdAt: string,

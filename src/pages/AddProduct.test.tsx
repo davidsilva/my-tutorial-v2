@@ -132,7 +132,7 @@ describe("AddProduct", () => {
           input: {
             name: "Test Product",
             description: "Test Description",
-            price: "10.99",
+            price: 1099,
             image: "chucknorris.png",
           },
         },

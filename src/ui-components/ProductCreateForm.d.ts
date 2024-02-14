@@ -24,14 +24,14 @@ export declare type ValidationFunction<T> = (value: T, validationResponse: Valid
 export declare type ProductCreateFormInputValues = {
     name?: string;
     description?: string;
-    price?: string;
+    price?: number;
     isArchived?: boolean;
     image?: string;
 };
 export declare type ProductCreateFormValidationValues = {
     name?: ValidationFunction<string>;
     description?: ValidationFunction<string>;
-    price?: ValidationFunction<string>;
+    price?: ValidationFunction<number>;
     isArchived?: ValidationFunction<boolean>;
     image?: ValidationFunction<string>;
 };

@@ -65,7 +65,7 @@ const Product: React.FC<ProductProps> = ({ product }) => {
           {product.name}
         </Card.Title>
         <Card.Text>{product.description}</Card.Text>
-        <Card.Text>{product.price}</Card.Text>
+        <Card.Text>{product.price && product.price / 100}</Card.Text>
         <Card.Text>{product.reviews?.items?.length || 0} reviews</Card.Text>
         <div>
           {isLoggedIn && (

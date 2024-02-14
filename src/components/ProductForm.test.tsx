@@ -32,7 +32,7 @@ describe("ProductForm", () => {
     render(
       <MemoryRouter>
         <ProductForm
-          initialValues={{ name: "", description: "", price: "" }}
+          initialValues={{ name: "", description: "", price: 0 }}
           onSubmit={vi.fn()}
         />
       </MemoryRouter>
@@ -44,7 +44,9 @@ describe("ProductForm", () => {
     expect(
       screen.getByRole("textbox", { name: /description/i })
     ).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: /price/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("spinbutton", { name: /price/i })
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /submit/i })).toBeInTheDocument();
   });
 
@@ -68,7 +70,7 @@ describe("ProductForm", () => {
     render(
       <MemoryRouter>
         <ProductForm
-          initialValues={{ name: "", description: "", price: "" }}
+          initialValues={{ name: "", description: "", price: 0 }}
           onSubmit={vi.fn()}
         />
       </MemoryRouter>
@@ -109,7 +111,7 @@ describe("ProductForm", () => {
     render(
       <MemoryRouter>
         <ProductForm
-          initialValues={{ name: "", description: "", price: "" }}
+          initialValues={{ name: "", description: "", price: 0 }}
           onSubmit={onSubmit}
         />
       </MemoryRouter>
@@ -146,7 +148,7 @@ describe("ProductForm", () => {
       {
         name: "Test Product",
         description: "Test Description",
-        price: "10.99",
+        price: 1099,
         image: "chucknorris.png",
       },
       expect.anything()
@@ -173,7 +175,7 @@ describe("ProductForm", () => {
     render(
       <MemoryRouter>
         <ProductForm
-          initialValues={{ name: "", description: "", price: "" }}
+          initialValues={{ name: "", description: "", price: 0 }}
           onSubmit={onSubmit}
         />
       </MemoryRouter>
