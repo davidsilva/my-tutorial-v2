@@ -23,6 +23,8 @@ export const onCreateProduct = /* GraphQL */ `subscription OnCreateProduct(
       __typename
     }
     image
+    stripePriceId
+    stripeProductId
     createdAt
     updatedAt
     owner
@@ -48,6 +50,8 @@ export const onUpdateProduct = /* GraphQL */ `subscription OnUpdateProduct(
       __typename
     }
     image
+    stripePriceId
+    stripeProductId
     createdAt
     updatedAt
     owner
@@ -73,6 +77,8 @@ export const onDeleteProduct = /* GraphQL */ `subscription OnDeleteProduct(
       __typename
     }
     image
+    stripePriceId
+    stripeProductId
     createdAt
     updatedAt
     owner
@@ -96,6 +102,8 @@ export const onCreateReview = /* GraphQL */ `subscription OnCreateReview(
       price
       isArchived
       image
+      stripePriceId
+      stripeProductId
       createdAt
       updatedAt
       owner
@@ -140,6 +148,8 @@ export const onUpdateReview = /* GraphQL */ `subscription OnUpdateReview(
       price
       isArchived
       image
+      stripePriceId
+      stripeProductId
       createdAt
       updatedAt
       owner
@@ -184,6 +194,8 @@ export const onDeleteReview = /* GraphQL */ `subscription OnDeleteReview(
       price
       isArchived
       image
+      stripePriceId
+      stripeProductId
       createdAt
       updatedAt
       owner

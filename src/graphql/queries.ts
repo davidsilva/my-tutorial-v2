@@ -20,6 +20,8 @@ export const getProduct = /* GraphQL */ `query GetProduct($id: ID!) {
       __typename
     }
     image
+    stripePriceId
+    stripeProductId
     createdAt
     updatedAt
     owner
@@ -43,6 +45,8 @@ export const listProducts = /* GraphQL */ `query ListProducts(
       price
       isArchived
       image
+      stripePriceId
+      stripeProductId
       createdAt
       updatedAt
       owner
@@ -66,6 +70,8 @@ export const getReview = /* GraphQL */ `query GetReview($id: ID!) {
       price
       isArchived
       image
+      stripePriceId
+      stripeProductId
       createdAt
       updatedAt
       owner

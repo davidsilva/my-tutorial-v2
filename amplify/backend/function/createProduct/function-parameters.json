@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "api": {
+      "mytutorialv2": [
+        "Mutation"
+      ]
+    }
+  },
+  "lambdaLayers": [],
+  "secretNames": [
+    "STRIPE_SECRET_KEY"
+  ]
+}

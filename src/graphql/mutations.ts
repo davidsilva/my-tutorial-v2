@@ -23,6 +23,8 @@ export const createProduct = /* GraphQL */ `mutation CreateProduct(
       __typename
     }
     image
+    stripePriceId
+    stripeProductId
     createdAt
     updatedAt
     owner
@@ -48,6 +50,8 @@ export const updateProduct = /* GraphQL */ `mutation UpdateProduct(
       __typename
     }
     image
+    stripePriceId
+    stripeProductId
     createdAt
     updatedAt
     owner
@@ -73,6 +77,8 @@ export const deleteProduct = /* GraphQL */ `mutation DeleteProduct(
       __typename
     }
     image
+    stripePriceId
+    stripeProductId
     createdAt
     updatedAt
     owner
@@ -96,6 +102,8 @@ export const createReview = /* GraphQL */ `mutation CreateReview(
       price
       isArchived
       image
+      stripePriceId
+      stripeProductId
       createdAt
       updatedAt
       owner
@@ -140,6 +148,8 @@ export const updateReview = /* GraphQL */ `mutation UpdateReview(
       price
       isArchived
       image
+      stripePriceId
+      stripeProductId
       createdAt
       updatedAt
       owner
@@ -184,6 +194,8 @@ export const deleteReview = /* GraphQL */ `mutation DeleteReview(
       price
       isArchived
       image
+      stripePriceId
+      stripeProductId
       createdAt
       updatedAt
       owner

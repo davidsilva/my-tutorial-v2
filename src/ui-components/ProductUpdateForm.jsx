@@ -36,6 +36,8 @@ export default function ProductUpdateForm(props) {
     price: "",
     isArchived: false,
     image: "",
+    stripePriceId: "",
+    stripeProductId: "",
   };
   const [name, setName] = React.useState(initialValues.name);
   const [description, setDescription] = React.useState(
@@ -44,6 +46,12 @@ export default function ProductUpdateForm(props) {
   const [price, setPrice] = React.useState(initialValues.price);
   const [isArchived, setIsArchived] = React.useState(initialValues.isArchived);
   const [image, setImage] = React.useState(initialValues.image);
+  const [stripePriceId, setStripePriceId] = React.useState(
+    initialValues.stripePriceId
+  );
+  const [stripeProductId, setStripeProductId] = React.useState(
+    initialValues.stripeProductId
+  );
   const [errors, setErrors] = React.useState({});
   const resetStateValues = () => {
     const cleanValues = productRecord
@@ -54,6 +62,8 @@ export default function ProductUpdateForm(props) {
     setPrice(cleanValues.price);
     setIsArchived(cleanValues.isArchived);
     setImage(cleanValues.image);
+    setStripePriceId(cleanValues.stripePriceId);
+    setStripeProductId(cleanValues.stripeProductId);
     setErrors({});
   };
   const [productRecord, setProductRecord] = React.useState(productModelProp);
@@ -78,6 +88,8 @@ export default function ProductUpdateForm(props) {
     price: [],
     isArchived: [],
     image: [],
+    stripePriceId: [],
+    stripeProductId: [],
   };
   const runValidationTasks = async (
     fieldName,
@@ -110,6 +122,8 @@ export default function ProductUpdateForm(props) {
           price: price ?? null,
           isArchived: isArchived ?? null,
           image: image ?? null,
+          stripePriceId: stripePriceId ?? null,
+          stripeProductId: stripeProductId ?? null,
         };
         const validationResponses = await Promise.all(
           Object.keys(validations).reduce((promises, fieldName) => {
@@ -175,6 +189,8 @@ export default function ProductUpdateForm(props) {
               price,
               isArchived,
               image,
+              stripePriceId,
+              stripeProductId,
             };
             const result = onChange(modelFields);
             value = result?.name ?? value;
@@ -203,6 +219,8 @@ export default function ProductUpdateForm(props) {
               price,
               isArchived,
               image,
+              stripePriceId,
+              stripeProductId,
             };
             const result = onChange(modelFields);
             value = result?.description ?? value;
@@ -235,6 +253,8 @@ export default function ProductUpdateForm(props) {
               price: value,
               isArchived,
               image,
+              stripePriceId,
+              stripeProductId,
             };
             const result = onChange(modelFields);
             value = result?.price ?? value;
@@ -263,6 +283,8 @@ export default function ProductUpdateForm(props) {
               price,
               isArchived: value,
               image,
+              stripePriceId,
+              stripeProductId,
             };
             const result = onChange(modelFields);
             value = result?.isArchived ?? value;
@@ -291,6 +313,8 @@ export default function ProductUpdateForm(props) {
               price,
               isArchived,
               image: value,
+              stripePriceId,
+              stripeProductId,
             };
             const result = onChange(modelFields);
             value = result?.image ?? value;
@@ -304,6 +328,66 @@ export default function ProductUpdateForm(props) {
         errorMessage={errors.image?.errorMessage}
         hasError={errors.image?.hasError}
         {...getOverrideProps(overrides, "image")}
+      ></TextField>
+      <TextField
+        label="Stripe price id"
+        isRequired={false}
+        isReadOnly={false}
+        value={stripePriceId}
+        onChange={(e) => {
+          let { value } = e.target;
+          if (onChange) {
+            const modelFields = {
+              name,
+              description,
+              price,
+              isArchived,
+              image,
+              stripePriceId: value,
+              stripeProductId,
+            };
+            const result = onChange(modelFields);
+            value = result?.stripePriceId ?? value;
+          }
+          if (errors.stripePriceId?.hasError) {
+            runValidationTasks("stripePriceId", value);
+          }
+          setStripePriceId(value);
+        }}
+        onBlur={() => runValidationTasks("stripePriceId", stripePriceId)}
+        errorMessage={errors.stripePriceId?.errorMessage}
+        hasError={errors.stripePriceId?.hasError}
+        {...getOverrideProps(overrides, "stripePriceId")}
+      ></TextField>
+      <TextField
+        label="Stripe product id"
+        isRequired={false}
+        isReadOnly={false}
+        value={stripeProductId}
+        onChange={(e) => {
+          let { value } = e.target;
+          if (onChange) {
+            const modelFields = {
+              name,
+              description,
+              price,
+              isArchived,
+              image,
+              stripePriceId,
+              stripeProductId: value,
+            };
+            const result = onChange(modelFields);
+            value = result?.stripeProductId ?? value;
+          }
+          if (errors.stripeProductId?.hasError) {
+            runValidationTasks("stripeProductId", value);
+          }
+          setStripeProductId(value);
+        }}
+        onBlur={() => runValidationTasks("stripeProductId", stripeProductId)}
+        errorMessage={errors.stripeProductId?.errorMessage}
+        hasError={errors.stripeProductId?.hasError}
+        {...getOverrideProps(overrides, "stripeProductId")}
       ></TextField>
       <Flex
         justifyContent="space-between"

@@ -14,11 +14,13 @@ type Product
   ) {
   id: ID!
   name: String!
-  description: String
-  price: Int
+  description: String!
+  price: Int!
   isArchived: Boolean
   reviews: [Review] @hasMany
   image: String
+  stripePriceId: String
+  stripeProductId: String
 }
 
 type Review

@@ -27,6 +27,8 @@ export declare type ProductCreateFormInputValues = {
     price?: number;
     isArchived?: boolean;
     image?: string;
+    stripePriceId?: string;
+    stripeProductId?: string;
 };
 export declare type ProductCreateFormValidationValues = {
     name?: ValidationFunction<string>;
@@ -34,6 +36,8 @@ export declare type ProductCreateFormValidationValues = {
     price?: ValidationFunction<number>;
     isArchived?: ValidationFunction<boolean>;
     image?: ValidationFunction<string>;
+    stripePriceId?: ValidationFunction<string>;
+    stripeProductId?: ValidationFunction<string>;
 };
 export declare type PrimitiveOverrideProps<T> = Partial<T> & React.DOMAttributes<HTMLDivElement>;
 export declare type ProductCreateFormOverridesProps = {
@@ -43,6 +47,8 @@ export declare type ProductCreateFormOverridesProps = {
     price?: PrimitiveOverrideProps<TextFieldProps>;
     isArchived?: PrimitiveOverrideProps<SwitchFieldProps>;
     image?: PrimitiveOverrideProps<TextFieldProps>;
+    stripePriceId?: PrimitiveOverrideProps<TextFieldProps>;
+    stripeProductId?: PrimitiveOverrideProps<TextFieldProps>;
 } & EscapeHatchProps;
 export declare type ProductCreateFormProps = React.PropsWithChildren<{
     overrides?: ProductCreateFormOverridesProps | undefined | null;
