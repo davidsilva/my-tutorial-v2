@@ -79,10 +79,14 @@ export const handler = async (event) => {
     let stripeProduct;
     let stripePrice;
 
-    const stripeInput = (({ name, description, price }) => ({
+    const stripeProductInput = (({ name, description }) => ({
       name,
       description,
-      price,
+    }))(input);
+
+    const stripePriceInput = (({ price }) => ({
+      unit_amount: price,
+      currency: "usd",
     }))(input);
 
     if (!isNewProduct) {
@@ -106,26 +110,23 @@ export const handler = async (event) => {
       if (unmarshalledProduct.stripeProductId) {
         stripeProduct = await stripe.products.update(
           unmarshalledProduct.stripeProductId,
-          stripeInput
+          stripeProductInput
         );
 
         // If price has changed, update the price in Stripe
         if (input.price && unmarshalledProduct.price !== input.price) {
           stripePrice = await stripe.prices.update(
             unmarshalledProduct.stripePriceId,
-            {
-              unit_amount: input.price,
-            }
+            stripePriceInput
           );
         }
       } else {
         // Create a new product in Stripe
-        stripeProduct = await stripe.products.create(stripeInput);
+        stripeProduct = await stripe.products.create(stripeProductInput);
 
         stripePrice = await stripe.prices.create({
           product: stripeProduct.id,
-          unit_amount: input.price,
-          currency: "usd",
+          ...stripePriceInput,
         });
 
         // Update the product in DynamoDB with the new Stripe IDs
@@ -141,13 +142,12 @@ export const handler = async (event) => {
       }
     } else {
       // Create a new product in Stripe
-      stripeProduct = await stripe.products.create(stripeInput);
+      stripeProduct = await stripe.products.create(stripeProductInput);
 
       // Create a new price in Stripe
       stripePrice = await stripe.prices.create({
         product: stripeProduct.id,
-        unit_amount: input.price,
-        currency: "usd",
+        ...stripePriceInput,
       });
     }
 
