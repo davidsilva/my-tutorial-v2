@@ -12,6 +12,8 @@ import Joi from "joi";
 const ssmClient = new SSMClient({ region: process.env.REGION });
 const dynamodbClient = new DynamoDBClient({ region: process.env.REGION });
 
+const tableName = `${process.env.TABLENAME}-${process.env.ENV}`;
+
 let stripe;
 
 const inputSchema = Joi.object({
@@ -92,7 +94,7 @@ export const handler = async (event) => {
     if (!isNewProduct) {
       // Fetch the from DynamoDB
       const getItemCommand = new GetItemCommand({
-        TableName: process.env.TABLENAME,
+        TableName: tableName,
         Key: marshall({
           id,
         }),
@@ -134,7 +136,7 @@ export const handler = async (event) => {
         unmarshalledProduct.stripePriceId = stripePrice.id;
 
         const putItemCommand = new PutItemCommand({
-          TableName: process.env.TABLENAME,
+          TableName: tableName,
           Item: marshall(unmarshalledProduct),
         });
 
@@ -152,7 +154,7 @@ export const handler = async (event) => {
     }
 
     const putItemCommand = new PutItemCommand({
-      TableName: process.env.TABLENAME,
+      TableName: tableName,
       Item: marshall({
         id,
         ...input,
