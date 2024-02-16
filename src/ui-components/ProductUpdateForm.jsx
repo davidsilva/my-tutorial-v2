@@ -84,8 +84,8 @@ export default function ProductUpdateForm(props) {
   React.useEffect(resetStateValues, [productRecord]);
   const validations = {
     name: [{ type: "Required" }],
-    description: [],
-    price: [],
+    description: [{ type: "Required" }],
+    price: [{ type: "Required" }],
     isArchived: [],
     image: [],
     stripePriceId: [],
@@ -118,8 +118,8 @@ export default function ProductUpdateForm(props) {
         event.preventDefault();
         let modelFields = {
           name,
-          description: description ?? null,
-          price: price ?? null,
+          description,
+          price,
           isArchived: isArchived ?? null,
           image: image ?? null,
           stripePriceId: stripePriceId ?? null,
@@ -207,7 +207,7 @@ export default function ProductUpdateForm(props) {
       ></TextField>
       <TextField
         label="Description"
-        isRequired={false}
+        isRequired={true}
         isReadOnly={false}
         value={description}
         onChange={(e) => {
@@ -237,7 +237,7 @@ export default function ProductUpdateForm(props) {
       ></TextField>
       <TextField
         label="Price"
-        isRequired={false}
+        isRequired={true}
         isReadOnly={false}
         type="number"
         step="any"

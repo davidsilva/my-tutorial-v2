@@ -63,8 +63,8 @@ export default function ProductCreateForm(props) {
   };
   const validations = {
     name: [{ type: "Required" }],
-    description: [],
-    price: [],
+    description: [{ type: "Required" }],
+    price: [{ type: "Required" }],
     isArchived: [],
     image: [],
     stripePriceId: [],
@@ -188,7 +188,7 @@ export default function ProductCreateForm(props) {
       ></TextField>
       <TextField
         label="Description"
-        isRequired={false}
+        isRequired={true}
         isReadOnly={false}
         value={description}
         onChange={(e) => {
@@ -218,7 +218,7 @@ export default function ProductCreateForm(props) {
       ></TextField>
       <TextField
         label="Price"
-        isRequired={false}
+        isRequired={true}
         isReadOnly={false}
         type="number"
         step="any"
