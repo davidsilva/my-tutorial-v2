@@ -91,6 +91,9 @@ export const handler = async (event) => {
       currency: "usd",
     }))(input);
 
+    let createdAt = new Date().toISOString();
+    let updatedAt = createdAt;
+
     if (!isNewProduct) {
       // Fetch the from DynamoDB
       const getItemCommand = new GetItemCommand({
@@ -107,6 +110,9 @@ export const handler = async (event) => {
       }
 
       const unmarshalledProduct = unmarshall(product);
+
+      createdAt = unmarshalledProduct.createdAt;
+      updatedAt = new Date().toISOString();
 
       // Update the product in Stripe
       if (unmarshalledProduct.stripeProductId) {
@@ -137,7 +143,14 @@ export const handler = async (event) => {
 
         const putItemCommand = new PutItemCommand({
           TableName: tableName,
-          Item: marshall(unmarshalledProduct),
+          Item: marshall({
+            id,
+            ...input,
+            stripeProductId: stripeProduct.id,
+            stripePriceId: stripePrice.id,
+            createdAt,
+            updatedAt,
+          }),
         });
 
         await dynamodbClient.send(putItemCommand);
@@ -160,6 +173,8 @@ export const handler = async (event) => {
         ...input,
         stripeProductId: stripeProduct.id,
         stripePriceId: stripePrice.id,
+        createdAt,
+        updatedAt,
       }),
     });
 
@@ -167,6 +182,11 @@ export const handler = async (event) => {
 
     return {
       statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*", // Required for CORS support to work
+        "Access-Control-Allow-Credentials": true, // Required for cookies, authorization headers with HTTPS
+        "Access-Control-Allow-Methods": "OPTIONS,POST,PUT",
+      },
       body: JSON.stringify({
         message: isNewProduct
           ? "Product updated successfully"
