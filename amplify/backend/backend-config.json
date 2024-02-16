@@ -1,5 +1,33 @@
 {
   "api": {
+    "ProductAPI": {
+      "dependsOn": [
+        {
+          "attributes": [
+            "Name",
+            "Arn"
+          ],
+          "category": "function",
+          "resourceName": "createProduct"
+        },
+        {
+          "attributes": [
+            "UserPoolId"
+          ],
+          "category": "auth",
+          "resourceName": "myTutorialV2Auth"
+        },
+        {
+          "attributes": [
+            "adminUsersGroupRole"
+          ],
+          "category": "auth",
+          "resourceName": "userPoolGroups"
+        }
+      ],
+      "providerPlugin": "awscloudformation",
+      "service": "API Gateway"
+    },
     "mytutorialv2": {
       "dependsOn": [
         {
