@@ -1,10 +1,8 @@
 import { toast } from "react-toastify";
 import { FormikValues } from "formik";
 import { Link } from "react-router-dom";
-import { generateClient } from "aws-amplify/api";
-import { createProduct } from "../graphql/mutations";
 import { ProductForm } from "../components";
-import { GraphQLError } from "graphql";
+import { post } from "aws-amplify/api";
 
 const initialValues = {
   name: "",
@@ -13,25 +11,24 @@ const initialValues = {
   image: undefined,
 };
 
-const client = generateClient();
-
 const AddProduct = () => {
   const onSubmit = async (values: FormikValues) => {
     const { name, description, price, image } = values;
     const product = { name, description, price, image };
 
     try {
-      await client.graphql({
-        query: createProduct,
-        variables: {
-          input: product,
+      await post({
+        apiName: "ProductAPI",
+        path: "/products",
+        options: {
+          body: product,
         },
       });
       toast.success("Product added successfully");
     } catch (err) {
-      const graphQLError = err as GraphQLError;
-      console.error("error creating product:", err);
-      toast.error(`Error adding product: ${graphQLError.message}`);
+      const error = err as Error;
+      console.error("error creating product:", error);
+      toast.error(`Error adding product: ${error.message}`);
     }
   };
 
