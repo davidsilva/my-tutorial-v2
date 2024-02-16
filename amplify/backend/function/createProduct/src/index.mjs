@@ -25,7 +25,7 @@ const inputSchema = Joi.object({
 
 const getStripeSecretKey = async () => {
   const command = new GetParameterCommand({
-    Name: "STRIPE_SECRET_KEY",
+    Name: "/amplify/d1orozue7xcs1n/envamb/AMPLIFY_createProduct_STRIPE_SECRET_KEY",
     WithDecryption: true,
   });
 
