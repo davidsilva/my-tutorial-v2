@@ -72,8 +72,8 @@ const ListProducts = () => {
         : b.name.localeCompare(a.name);
     } else {
       if (a.price && b.price) {
-        const priceA = parseFloat(a.price);
-        const priceB = parseFloat(b.price);
+        const priceA = a.price;
+        const priceB = b.price;
         return sortDirection === "asc" ? priceA - priceB : priceB - priceA;
       } else {
         return 0;
