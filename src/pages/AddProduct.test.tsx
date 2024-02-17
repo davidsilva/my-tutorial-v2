@@ -2,7 +2,6 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AddProduct } from "./";
 import { MemoryRouter } from "react-router-dom";
-import { createProduct } from "../graphql/mutations";
 import { toast } from "react-toastify";
 import { AuthContextProvider } from "../context/AuthContext";
 
@@ -46,10 +45,15 @@ const { graphqlMock } = vi.hoisted(() => {
   return { graphqlMock: vi.fn() };
 });
 
+const { postMock } = vi.hoisted(() => {
+  return { postMock: vi.fn() };
+});
+
 vi.mock("aws-amplify/api", () => ({
   generateClient: () => ({
     graphql: graphqlMock,
   }),
+  post: postMock,
 }));
 
 vi.mock("react-toastify", () => ({
@@ -92,15 +96,36 @@ const renderAddProduct = async () => {
   });
 };
 
+const product = {
+  name: "Test Product",
+  description: "Test Description",
+  price: 1099,
+  image: "chucknorris.png",
+};
+
 describe("AddProduct", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    graphqlMock.mockImplementationOnce((query) => {
-      if (query === createProduct) {
-        return Promise.resolve();
-      }
-    });
+    const response = {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Credentials": true,
+        "Access-Control-Allow-Methods": "OPTIONS,POST,PUT",
+      },
+      body: JSON.stringify({
+        message: "Product created successfully",
+        product: {
+          id: "1234",
+          ...product,
+          stripeProductId: "stripeProduct1",
+          stripePriceId: "stripePrice1",
+        },
+      }),
+    };
+
+    postMock.mockResolvedValue(response);
 
     await renderAddProduct();
   });
@@ -115,7 +140,7 @@ describe("AddProduct", () => {
     ).toBeInTheDocument();
   });
 
-  test("should call createProduct mutation with the product values", async () => {
+  test("should call ProductAPI", async () => {
     const user = userEvent.setup();
     const file = new File(["(⌐□_□)"], "chucknorris.png", {
       type: "image/png",
@@ -126,10 +151,11 @@ describe("AddProduct", () => {
     await user.click(screen.getByRole("button", { name: /submit/i }));
 
     await waitFor(() => {
-      expect(graphqlMock).toHaveBeenCalledWith({
-        query: createProduct,
-        variables: {
-          input: {
+      expect(postMock).toHaveBeenCalledWith({
+        apiName: "ProductAPI",
+        path: "/products",
+        options: {
+          body: {
             name: "Test Product",
             description: "Test Description",
             price: 1099,
