@@ -113,7 +113,7 @@ function ProductDetail() {
 
           <Card.Title>{product?.name}</Card.Title>
           <Card.Text>{product?.description}</Card.Text>
-          <Card.Text>{product?.price}</Card.Text>
+          <Card.Text>{product?.price && product.price / 100}</Card.Text>
           <p>{product?.reviews?.items?.length || 0} reviews</p>
           <div>
             {isAdmin && (

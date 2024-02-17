@@ -36,7 +36,7 @@ const { graphqlMock } = vi.hoisted(() => {
     id: "372db325-5f72-49fa-ba8c-ab628c0ed470",
     name: "Test Product",
     description: "This is a test product",
-    price: "9.99",
+    price: 999,
     isArchived: false,
     image: "test-product.jpg",
     createdAt: "2022-01-01T00:00:00Z",
