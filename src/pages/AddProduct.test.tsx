@@ -153,7 +153,7 @@ describe("AddProduct", () => {
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith({
         apiName: "ProductAPI",
-        path: "/products",
+        path: "/product",
         options: {
           body: {
             name: "Test Product",

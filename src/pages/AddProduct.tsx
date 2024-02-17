@@ -19,7 +19,7 @@ const AddProduct = () => {
     try {
       await post({
         apiName: "ProductAPI",
-        path: "/products",
+        path: "/product",
         options: {
           body: product,
         },
