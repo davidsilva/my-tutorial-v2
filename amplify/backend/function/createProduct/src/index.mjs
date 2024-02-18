@@ -49,8 +49,18 @@ const getStripeClient = async () => {
  * @type {import('@types/aws-lambda').APIGatewayProxyHandler}
  */
 export const handler = async (event) => {
+  if (!event) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({
+        message: "Invalid input",
+      }),
+    };
+  }
+
   console.log(`EVENT: ${JSON.stringify(event)}`);
-  let { id, ...input } = event.arguments.input;
+
+  let { id, ...input } = event;
 
   const isNewProduct = !id;
 
