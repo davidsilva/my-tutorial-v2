@@ -3,6 +3,7 @@ import {
   DynamoDBClient,
   PutItemCommand,
   GetItemCommand,
+  UpdateItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 import Stripe from "stripe";
@@ -27,7 +28,7 @@ const inputSchema = Joi.object({
 
 const getStripeSecretKey = async () => {
   const command = new GetParameterCommand({
-    Name: "/amplify/d1orozue7xcs1n/envamb/AMPLIFY_createProduct_STRIPE_SECRET_KEY",
+    Name: `/amplify/d1orozue7xcs1n/${process.env.ENV}/AMPLIFY_createProduct_STRIPE_SECRET_KEY`,
     WithDecryption: true,
   });
 
@@ -46,9 +47,25 @@ const getStripeClient = async () => {
 };
 
 /**
- * @type {import('@types/aws-lambda').APIGatewayProxyHandler}
+ * @typedef {Object} Event
+ * @property {string} operation
+ * @property {Object} payload
+ * @property {Object} payload.Item
+ * @property {string} payload.Item.id
+ * @property {string} payload.Item.name
+ * @property {string} payload.Item.description
+ * @property {number} payload.Item.price
+ * @property {string} payload.Item.image
+ * @property {string} payload.Item.stripeProductId
+ * @property {string} payload.Item.stripePriceId
  */
-export const handler = async (event) => {
+
+/**
+ * @type {import('@types/aws-lambda').APIGatewayProxyHandler}
+ * @param {Event} event
+ */
+export const handler = async (event, context) => {
+  console.log(`CONTEXT: ${JSON.stringify(context)}`);
   if (!event) {
     return {
       statusCode: 400,
@@ -60,9 +77,9 @@ export const handler = async (event) => {
 
   console.log(`EVENT: ${JSON.stringify(event)}`);
 
-  let { id, ...input } = event;
+  let { id, ...input } = event.payload.Item || {};
 
-  const isNewProduct = !id;
+  const isNewProduct = event.operation === "create";
 
   // Generate id if it doesn't exist
   if (isNewProduct) {
@@ -151,7 +168,7 @@ export const handler = async (event) => {
         unmarshalledProduct.stripeProductId = stripeProduct.id;
         unmarshalledProduct.stripePriceId = stripePrice.id;
 
-        const putItemCommand = new PutItemCommand({
+        const updateItemCommand = new UpdateItemCommand({
           TableName: tableName,
           Item: marshall({
             id,
@@ -163,9 +180,11 @@ export const handler = async (event) => {
           }),
         });
 
-        await dynamodbClient.send(putItemCommand);
+        await dynamodbClient.send(updateItemCommand);
       }
     } else {
+      // New product
+
       // Create a new product in Stripe
       stripeProduct = await stripe.products.create(stripeProductInput);
 
@@ -192,15 +211,10 @@ export const handler = async (event) => {
 
     return {
       statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*", // Required for CORS support to work
-        "Access-Control-Allow-Credentials": true, // Required for cookies, authorization headers with HTTPS
-        "Access-Control-Allow-Methods": "OPTIONS,POST,PUT",
-      },
       body: JSON.stringify({
         message: isNewProduct
-          ? "Product updated successfully"
-          : "Product created successfully",
+          ? "Product created successfully"
+          : "Product updated successfully",
         product: {
           id,
           ...input,

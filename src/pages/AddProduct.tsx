@@ -21,7 +21,12 @@ const AddProduct = () => {
         apiName: "ProductAPI",
         path: "/product",
         options: {
-          body: product,
+          body: {
+            operation: "create",
+            payload: {
+              Item: product,
+            },
+          },
         },
       });
       toast.success("Product added successfully");
