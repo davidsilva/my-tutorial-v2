@@ -156,10 +156,15 @@ describe("AddProduct", () => {
         path: "/product",
         options: {
           body: {
-            name: "Test Product",
-            description: "Test Description",
-            price: 1099,
-            image: "chucknorris.png",
+            operation: "create",
+            payload: {
+              Item: {
+                name: "Test Product",
+                description: "Test Description",
+                price: 1099,
+                image: "chucknorris.png",
+              },
+            },
           },
         },
       });
