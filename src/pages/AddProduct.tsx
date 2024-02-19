@@ -8,7 +8,7 @@ const initialValues = {
   name: "",
   description: "",
   price: 0,
-  image: undefined,
+  image: "",
 };
 
 const AddProduct = () => {
