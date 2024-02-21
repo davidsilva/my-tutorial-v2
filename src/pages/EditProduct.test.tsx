@@ -59,10 +59,15 @@ const { graphqlMock } = vi.hoisted(() => {
   };
 });
 
+const { patchMock } = vi.hoisted(() => {
+  return { patchMock: vi.fn() };
+});
+
 vi.mock("aws-amplify/api", () => ({
   generateClient: vi.fn(() => ({
     graphql: graphqlMock,
   })),
+  patch: patchMock,
 }));
 
 vi.mock("aws-amplify/auth");
@@ -78,7 +83,7 @@ vi.mock("react-toastify", () => ({
 const mockProduct = {
   name: "Test Product",
   description: "Test Description",
-  price: "10.99",
+  price: 1099,
   id: "372db325-5f72-49fa-ba8c-ab628c0ed470",
 };
 
@@ -149,21 +154,19 @@ describe("EditProduct", () => {
       isLoading: false,
     });
 
-    graphqlMock.mockImplementationOnce(({ query }) => {
-      if (query === updateProduct) {
-        return Promise.resolve({
-          data: {
-            updateProduct: {
-              name: "Test Product",
-              description: "New Test Description",
-              price: 1099,
-              id: "372db325-5f72-49fa-ba8c-ab628c0ed470",
-              image: "chucknorris.jpg",
-            },
-          },
-        });
-      }
-    });
+    const response = {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: "Product created successfully",
+        product: {
+          ...mockProduct,
+          stripeProductId: "stripeProduct1",
+          stripePriceId: "stripePrice1",
+        },
+      }),
+    };
+
+    patchMock.mockResolvedValue(response);
 
     renderEditProduct();
   });
@@ -178,7 +181,7 @@ describe("EditProduct", () => {
     expect(useGetProduct).toHaveBeenCalledWith(mockProduct.id);
   });
 
-  test("calls graphql() with updated product data when form is submitted", async () => {
+  test("calls ProductAPI with updated product data when form is submitted", async () => {
     const user = userEvent.setup();
 
     const form = await screen.findByRole("form", {
@@ -194,12 +197,18 @@ describe("EditProduct", () => {
 
     // Assert that graphql() was called with the updated product data
     await waitFor(() => {
-      expect(graphqlMock).toHaveBeenCalledWith({
-        query: updateProduct,
-        variables: {
-          input: {
-            id: mockProduct.id,
-            ...newValues,
+      expect(patchMock).toHaveBeenCalledWith({
+        apiName: "ProductAPI",
+        path: `/product/${mockProduct.id}`,
+        options: {
+          body: {
+            operation: "update",
+            payload: {
+              Item: {
+                id: mockProduct.id,
+                ...newValues,
+              },
+            },
           },
         },
       });
@@ -221,21 +230,19 @@ describe("EditProduct error handling: can't get product", () => {
       isLoading: false,
     });
 
-    graphqlMock.mockImplementationOnce(({ query }) => {
-      if (query === updateProduct) {
-        return Promise.resolve({
-          data: {
-            updateProduct: {
-              name: "Test Product",
-              description: "New Test Description",
-              price: 1099,
-              id: "372db325-5f72-49fa-ba8c-ab628c0ed470",
-              image: "chucknorris.jpg",
-            },
-          },
-        });
-      }
-    });
+    const response = {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: "Product created successfully",
+        product: {
+          ...mockProduct,
+          stripeProductId: "stripeProduct1",
+          stripePriceId: "stripePrice1",
+        },
+      }),
+    };
+
+    patchMock.mockResolvedValue(response);
 
     renderEditProduct();
   });
@@ -275,11 +282,7 @@ describe("EditProduct error handling: can't update product", () => {
       isLoading: false,
     });
 
-    graphqlMock.mockReset().mockImplementation(({ query }) => {
-      if (query === updateProduct) {
-        return Promise.reject(new Error("Error updating product"));
-      }
-    });
+    patchMock.mockRejectedValue(new Error("An error occurred"));
 
     renderEditProduct();
   });

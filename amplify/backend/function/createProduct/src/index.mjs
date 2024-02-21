@@ -3,7 +3,6 @@ import {
   DynamoDBClient,
   PutItemCommand,
   GetItemCommand,
-  UpdateItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 import Stripe from "stripe";
@@ -21,14 +20,16 @@ const inputSchema = Joi.object({
   name: Joi.string().required(),
   description: Joi.string().required(),
   price: Joi.number().required(),
+  image: Joi.string().optional().allow(""),
   id: Joi.string().optional(),
   stripeProductId: Joi.string().optional(),
   stripePriceId: Joi.string().optional(),
 }).unknown();
 
 const getStripeSecretKey = async () => {
+  // Seems problematic to get the Amplify App ID from the environment
   const command = new GetParameterCommand({
-    Name: `/amplify/d1orozue7xcs1n/${process.env.ENV}/AMPLIFY_createProduct_STRIPE_SECRET_KEY`,
+    Name: `/amplify/${process.env.AWS_AMPLIFY_ID}/${process.env.ENV}/AMPLIFY_createProduct_STRIPE_SECRET_KEY`,
     WithDecryption: true,
   });
 
@@ -44,6 +45,121 @@ const getStripeClient = async () => {
   }
 
   return stripe;
+};
+
+const createStripeProductId = async ({ name, description }) => {
+  if (!name || !description) {
+    return Promise.reject("Name and description are required");
+  }
+
+  const stripe = await getStripeClient();
+
+  const stripeProduct = await stripe.products.create({ name, description });
+
+  return stripeProduct.id;
+};
+
+const createStripePriceId = async (input) => {
+  if (!input.price) {
+    return Promise.reject("Price is required");
+  }
+
+  const stripe = await getStripeClient();
+
+  const stripePrice = await stripe.prices.create({
+    product: input.stripeProductId,
+    unit_amount: input.price,
+    currency: "usd",
+  });
+
+  return stripePrice.id;
+};
+
+const createProduct = async (input) => {
+  if (!input || !input.name || !input.description || !input.price) {
+    return Promise.reject("Name, description, and price are required");
+  }
+
+  const stripeProductId = await createStripeProductId(input);
+  const stripePriceId = await createStripePriceId(input.price);
+
+  const id = uuidv4();
+  const createdAt = new Date().toISOString();
+  const updatedAt = createdAt;
+  const product = {
+    ...input,
+    id,
+    stripeProductId,
+    stripePriceId,
+    createdAt,
+    updatedAt,
+  };
+
+  const putItemCommand = new PutItemCommand({
+    TableName: tableName,
+    Item: marshall(product),
+  });
+
+  await dynamodbClient.send(putItemCommand);
+
+  return Promise.resolve(product);
+};
+
+const updateProduct = async (input) => {
+  if (!input || !input.id) {
+    return Promise.reject("ID is required");
+  }
+
+  // Get the product from DynamoDB
+  // If we can't find the product, we can't update it
+  const getItemCommand = new GetItemCommand({
+    TableName: tableName,
+    Key: marshall({
+      id: input.id,
+    }),
+  });
+
+  const { Item: dynamoItem } = await dynamodbClient.send(getItemCommand);
+  const product = unmarshall(dynamoItem);
+
+  if (!product) {
+    return Promise.reject("Could not update product because it was not found");
+  }
+
+  const createdAt = input.createdAt || new Date().toISOString();
+  const updatedAt = new Date().toISOString();
+  let stripeProductId = product.stripeProductId;
+  let stripePriceId = product.stripePriceId;
+
+  if (!stripeProductId) {
+    // Create a new product in Stripe
+    stripeProductId = await createStripeProductId(input);
+    // If there is no Stripe Product ID, there should be no Stripe Price ID
+    // So let's create one
+    stripePriceId = await createStripePriceId({ ...input, stripeProductId });
+  }
+
+  if (!stripePriceId || input.price !== product.price) {
+    // Create a new price in Stripe
+    stripePriceId = await createStripePriceId({ ...input, stripeProductId });
+  }
+
+  const updatedProduct = {
+    ...input,
+    createdAt,
+    updatedAt,
+    stripeProductId,
+    stripePriceId,
+  };
+
+  const putItemCommand = new PutItemCommand({
+    TableName: tableName,
+    Item: marshall(updatedProduct),
+  });
+
+  await dynamodbClient.send(putItemCommand);
+
+  return Promise.resolve(updatedProduct);
 };
 
 /**
@@ -62,7 +178,6 @@ const getStripeClient = async () => {
 
 /**
  * @type {import('@types/aws-lambda').APIGatewayProxyHandler}
- * @param {Event} event
  */
 export const handler = async (event, context) => {
   console.log(`CONTEXT: ${JSON.stringify(context)}`);
@@ -77,14 +192,8 @@ export const handler = async (event, context) => {
 
   console.log(`EVENT: ${JSON.stringify(event)}`);
 
-  let { id, ...input } = event.payload.Item || {};
-
-  const isNewProduct = event.operation === "create";
-
-  // Generate id if it doesn't exist
-  if (isNewProduct) {
-    id = uuidv4();
-  }
+  let { ...input } = event.payload.Item;
+  let result;
 
   const { error } = inputSchema.validate(input);
   /*
@@ -103,126 +212,41 @@ export const handler = async (event, context) => {
   }
 
   try {
-    const stripe = await getStripeClient();
-
-    let stripeProduct;
-    let stripePrice;
-
-    const stripeProductInput = (({ name, description }) => ({
-      name,
-      description,
-    }))(input);
-
-    const stripePriceInput = (({ price }) => ({
-      unit_amount: price,
-      currency: "usd",
-    }))(input);
-
-    let createdAt = new Date().toISOString();
-    let updatedAt = createdAt;
-
-    if (!isNewProduct) {
-      // Fetch the from DynamoDB
-      const getItemCommand = new GetItemCommand({
-        TableName: tableName,
-        Key: marshall({
-          id,
-        }),
-      });
-
-      const { Item: product } = await dynamodbClient.send(getItemCommand);
-
-      if (!product) {
-        throw new Error("Product not found");
-      }
-
-      const unmarshalledProduct = unmarshall(product);
-
-      createdAt = unmarshalledProduct.createdAt;
-      updatedAt = new Date().toISOString();
-
-      // Update the product in Stripe
-      if (unmarshalledProduct.stripeProductId) {
-        stripeProduct = await stripe.products.update(
-          unmarshalledProduct.stripeProductId,
-          stripeProductInput
-        );
-
-        // If price has changed, update the price in Stripe
-        if (input.price && unmarshalledProduct.price !== input.price) {
-          stripePrice = await stripe.prices.update(
-            unmarshalledProduct.stripePriceId,
-            stripePriceInput
-          );
-        }
-      } else {
-        // Create a new product in Stripe
-        stripeProduct = await stripe.products.create(stripeProductInput);
-
-        stripePrice = await stripe.prices.create({
-          product: stripeProduct.id,
-          ...stripePriceInput,
-        });
-
-        // Update the product in DynamoDB with the new Stripe IDs
-        unmarshalledProduct.stripeProductId = stripeProduct.id;
-        unmarshalledProduct.stripePriceId = stripePrice.id;
-
-        const updateItemCommand = new UpdateItemCommand({
-          TableName: tableName,
-          Item: marshall({
-            id,
-            ...input,
-            stripeProductId: stripeProduct.id,
-            stripePriceId: stripePrice.id,
-            createdAt,
-            updatedAt,
+    switch (event.operation) {
+      case "create":
+        result = await createProduct(input);
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            message: "Product created successfully",
+            product: result,
           }),
-        });
-
-        await dynamodbClient.send(updateItemCommand);
-      }
-    } else {
-      // New product
-
-      // Create a new product in Stripe
-      stripeProduct = await stripe.products.create(stripeProductInput);
-
-      // Create a new price in Stripe
-      stripePrice = await stripe.prices.create({
-        product: stripeProduct.id,
-        ...stripePriceInput,
-      });
+        };
+      case "update":
+        if (!input || !input.id) {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({
+              message: "Invalid input: ID is required for update operation",
+            }),
+          };
+        }
+        result = await updateProduct(input);
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            message: "Product updated successfully",
+            product: result,
+          }),
+        };
+      default:
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: "Invalid operation",
+          }),
+        };
     }
-
-    const putItemCommand = new PutItemCommand({
-      TableName: tableName,
-      Item: marshall({
-        id,
-        ...input,
-        stripeProductId: stripeProduct.id,
-        stripePriceId: stripePrice.id,
-        createdAt,
-        updatedAt,
-      }),
-    });
-
-    await dynamodbClient.send(putItemCommand);
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        message: isNewProduct
-          ? "Product created successfully"
-          : "Product updated successfully",
-        product: {
-          id,
-          ...input,
-          stripeProductId: stripeProduct.id,
-          stripePriceId: stripePrice.id,
-        },
-      }),
-    };
   } catch (error) {
     /*
      * This is giving a lot of error information to the client, which could

@@ -2,12 +2,17 @@ import { toast } from "react-toastify";
 import { useEffect } from "react";
 import { FormikValues } from "formik";
 import { Link, useParams } from "react-router-dom";
-import { generateClient } from "aws-amplify/api";
-import { updateProduct } from "../graphql/mutations";
 import useGetProduct from "../hooks/useGetProduct";
 import ProductForm from "../components/ProductForm";
+import { patch } from "aws-amplify/api";
 
-const client = generateClient();
+type ProductData = {
+  name: string;
+  description: string;
+  price: number;
+  image?: string;
+  id: string;
+};
 
 const EditProduct = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -32,7 +37,7 @@ const EditProduct = () => {
   const onSubmit = async (values: FormikValues) => {
     if (!productId) return;
     const { name, description, price, image } = values;
-    const productData = {
+    const productData: ProductData = {
       name,
       description,
       price,
@@ -40,10 +45,16 @@ const EditProduct = () => {
       id: productId,
     };
     try {
-      await client.graphql({
-        query: updateProduct,
-        variables: {
-          input: productData,
+      await patch({
+        apiName: "ProductAPI",
+        path: `/product/${productId}`,
+        options: {
+          body: {
+            operation: "update",
+            payload: {
+              Item: productData,
+            },
+          },
         },
       });
       toast.success("Product updated successfully");
