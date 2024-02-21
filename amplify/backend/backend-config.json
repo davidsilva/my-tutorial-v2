@@ -131,6 +131,56 @@
       "service": "Lambda"
     }
   },
+  "parameters": {
+    "AMPLIFY_function_createProduct_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "createProduct"
+        }
+      ]
+    },
+    "AMPLIFY_function_createProduct_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "createProduct"
+        }
+      ]
+    },
+    "AMPLIFY_function_createProduct_secretsPathAmplifyAppId": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "createProduct"
+        }
+      ]
+    },
+    "AMPLIFY_function_myTutorialV2AuthPostConfirmation_GROUP": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "myTutorialV2AuthPostConfirmation"
+        }
+      ]
+    },
+    "AMPLIFY_function_myTutorialV2AuthPostConfirmation_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "myTutorialV2AuthPostConfirmation"
+        }
+      ]
+    },
+    "AMPLIFY_function_myTutorialV2AuthPostConfirmation_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "myTutorialV2AuthPostConfirmation"
+        }
+      ]
+    }
+  },
   "storage": {
     "productimages": {
       "dependsOn": [
