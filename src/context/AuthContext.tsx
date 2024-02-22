@@ -96,6 +96,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     try {
       const currentUser = await getCurrentUser();
       setIsLoggedIn(true);
+      localStorage.setItem("isLoggedIn", "true");
       setUser(currentUser);
 
       const isAdmin = await checkIsAdmin();
@@ -103,6 +104,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     } catch (err) {
       console.error(err);
       setIsLoggedIn(false);
+      localStorage.removeItem("isLoggedIn");
       setUser(null);
       setIsAdmin(false);
     }
