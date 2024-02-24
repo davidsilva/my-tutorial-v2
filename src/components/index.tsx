@@ -7,3 +7,4 @@ export { default as ProductForm } from "./ProductForm";
 export { default as ProtectedRoute } from "./ProtectedRoute";
 export { default as Review } from "./Review";
 export { default as ImageUpload } from "./ImageUpload";
+export { default as CartBannerItem } from "./CartBannerItem";

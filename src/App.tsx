@@ -17,9 +17,11 @@ import {
   UserProfile,
   EditUserProfile,
   NotAuthorized,
+  Cart,
 } from "./pages";
 import "@aws-amplify/ui-react/styles.css";
 import { AuthContextProvider } from "./context/AuthContext";
+import { CartContextProvider } from "./context/CartContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ProtectedRoute } from "./components";
@@ -113,6 +115,10 @@ const router = createBrowserRouter([
         path: "/not-authorized",
         element: <NotAuthorized />,
       },
+      {
+        path: "cart",
+        element: <Cart />,
+      },
     ],
   },
 ]);
@@ -121,10 +127,10 @@ const App = () => {
   return (
     <React.StrictMode>
       <AuthContextProvider>
-        <>
+        <CartContextProvider>
           <RouterProvider router={router} />
           <ToastContainer />
-        </>
+        </CartContextProvider>
       </AuthContextProvider>
     </React.StrictMode>
   );
