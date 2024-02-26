@@ -3,6 +3,7 @@ import { screen, render, waitFor } from "@testing-library/react";
 import HomeLayout from "./HomeLayout";
 import { AuthContextProvider } from "../context/AuthContext";
 import { MemoryRouter } from "react-router-dom";
+import { CartContextProvider } from "../context/CartContext";
 
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
@@ -38,7 +39,9 @@ const renderComponent = async () => {
     render(
       <MemoryRouter>
         <AuthContextProvider>
-          <HomeLayout />
+          <CartContextProvider>
+            <HomeLayout />
+          </CartContextProvider>
         </AuthContextProvider>
       </MemoryRouter>
     );

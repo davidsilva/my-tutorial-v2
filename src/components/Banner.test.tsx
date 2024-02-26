@@ -5,6 +5,7 @@ import { AuthContextProvider } from "../context/AuthContext";
 import { MemoryRouter } from "react-router-dom";
 import Banner from "./Banner";
 import { ReactNode } from "react";
+import { CartContextProvider } from "../context/CartContext";
 
 const { mockNavigate } = vi.hoisted(() => {
   return { mockNavigate: vi.fn() };
@@ -47,13 +48,37 @@ vi.mock("../context/AuthContext", async () => {
   };
 });
 
+const { useCartContextMock } = vi.hoisted(() => {
+  return {
+    useCartContextMock: vi.fn().mockReturnValue({
+      cartItems: [],
+      addToCart: vi.fn(),
+      removeFromCart: vi.fn(),
+      totalAmount: 2000,
+      clearCart: vi.fn(),
+      incrementQuantity: vi.fn(),
+      decrementQuantity: vi.fn(),
+    }),
+  };
+});
+
+vi.mock("../context/CartContext", async () => {
+  const actual = await import("../context/CartContext");
+  return {
+    ...actual,
+    useCartContext: useCartContextMock,
+  };
+});
+
 vi.mock("aws-amplify/auth");
 
 const renderWithAuthContext = async (component: ReactNode) => {
   await waitFor(() => {
     render(
       <MemoryRouter>
-        <AuthContextProvider>{component}</AuthContextProvider>
+        <AuthContextProvider>
+          <CartContextProvider>{component}</CartContextProvider>
+        </AuthContextProvider>
       </MemoryRouter>
     );
   });

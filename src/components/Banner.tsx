@@ -6,6 +6,7 @@ import Button from "react-bootstrap/Button";
 import Dropdown from "react-bootstrap/Dropdown";
 import { Link } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
+import { CartBannerItem } from "./";
 
 const Banner = () => {
   const { isLoggedIn, isAdmin, user, signOut } = useAuthContext();
@@ -32,6 +33,7 @@ const Banner = () => {
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
+          <CartBannerItem />
           {!isLoggedIn && (
             <>
               <Button variant="dark" onClick={handleSignIn}>
