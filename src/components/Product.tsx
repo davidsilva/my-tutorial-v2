@@ -6,6 +6,7 @@ import { archiveProduct, restoreProduct } from "../graphql/customMutations";
 import { generateClient } from "aws-amplify/api";
 import { Button } from "react-bootstrap";
 import { useAuthContext } from "../context/AuthContext";
+import { useCartContext } from "../context/CartContext";
 import { S3_URL } from "../constants";
 
 interface ProductProps {
@@ -18,6 +19,7 @@ const Product: React.FC<ProductProps> = ({ product }) => {
   const navigate = useNavigate();
   const [isArchived, setIsArchived] = useState(product.isArchived);
   const { isLoggedIn, isAdmin } = useAuthContext();
+  const { addToCart } = useCartContext();
 
   const handleEdit = () => {
     navigate(`/products/${product.id}/edit`);
@@ -83,6 +85,7 @@ const Product: React.FC<ProductProps> = ({ product }) => {
             <Button onClick={() => navigate(`/products/${product.id}`)}>
               Detail
             </Button>
+            <Button onClick={() => addToCart(product, 1)}>Add to Cart</Button>
           </>
         </div>
       </Card.Body>

@@ -7,6 +7,7 @@ import { archiveProduct, restoreProduct } from "../graphql/customMutations";
 import { getProductWithReviews } from "../graphql/customQueries";
 import { GetProductWithReviewsQuery } from "../API";
 import { useAuthContext } from "../context/AuthContext";
+import { useCartContext } from "../context/CartContext";
 import { Review } from "../components";
 import { S3_URL } from "../constants";
 
@@ -20,6 +21,7 @@ function ProductDetail() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const { isLoggedIn, isAdmin } = useAuthContext();
+  const { addToCart } = useCartContext();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -123,6 +125,9 @@ function ProductDetail() {
                   {product?.isArchived ? "Restore" : "Archive"}
                 </Button>
               </div>
+            )}
+            {product && (
+              <Button onClick={() => addToCart(product, 1)}>Add to Cart</Button>
             )}
           </div>
         </Card.Body>

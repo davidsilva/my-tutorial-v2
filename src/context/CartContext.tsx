@@ -16,6 +16,7 @@ export type CartContextType = {
   incrementQuantity: (item: CartItem) => void;
   decrementQuantity: (item: CartItem) => void;
   totalAmount: number;
+  totalQuantity: number;
 };
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -26,6 +27,7 @@ export const CartContextProvider: React.FC<CartContextProviderProps> = ({
 }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>(initialState || []);
   const [totalAmount, setTotalAmount] = useState(0);
+  const [totalQuantity, setTotalQuantity] = useState(0);
 
   useEffect(() => {
     const newTotalAmount = cartItems.reduce(
@@ -33,6 +35,12 @@ export const CartContextProvider: React.FC<CartContextProviderProps> = ({
       0
     );
     setTotalAmount(newTotalAmount);
+
+    const newTotalQuantity = cartItems.reduce(
+      (acc, cartItem) => acc + cartItem.quantity,
+      0
+    );
+    setTotalQuantity(newTotalQuantity);
   }, [cartItems]);
 
   const addToCart = (product: Product, quantity: number = 1) => {
@@ -106,6 +114,7 @@ export const CartContextProvider: React.FC<CartContextProviderProps> = ({
         incrementQuantity,
         decrementQuantity,
         totalAmount,
+        totalQuantity,
       }}
     >
       {children}
