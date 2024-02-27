@@ -22,6 +22,14 @@ export const getProduct = /* GraphQL */ `query GetProduct($id: ID!) {
     image
     stripePriceId
     stripeProductId
+    cartItems {
+      nextToken
+      __typename
+    }
+    orderItems {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     owner
@@ -82,6 +90,7 @@ export const getReview = /* GraphQL */ `query GetReview($id: ID!) {
     isArchived
     user {
       id
+      userId
       username
       firstName
       lastName
@@ -129,11 +138,20 @@ export const listReviews = /* GraphQL */ `query ListReviews(
 export const getUser = /* GraphQL */ `query GetUser($id: ID!) {
   getUser(id: $id) {
     id
+    userId
     username
     firstName
     lastName
     isArchived
     reviews {
+      nextToken
+      __typename
+    }
+    sessions {
+      nextToken
+      __typename
+    }
+    orders {
       nextToken
       __typename
     }
@@ -152,6 +170,7 @@ export const listUsers = /* GraphQL */ `query ListUsers(
   listUsers(filter: $filter, limit: $limit, nextToken: $nextToken) {
     items {
       id
+      userId
       username
       firstName
       lastName
@@ -166,3 +185,251 @@ export const listUsers = /* GraphQL */ `query ListUsers(
   }
 }
 ` as GeneratedQuery<APITypes.ListUsersQueryVariables, APITypes.ListUsersQuery>;
+export const getSession = /* GraphQL */ `query GetSession($id: ID!) {
+  getSession(id: $id) {
+    id
+    userId
+    sessionId
+    cartItems {
+      nextToken
+      __typename
+    }
+    user {
+      id
+      userId
+      username
+      firstName
+      lastName
+      isArchived
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    createdAt
+    updatedAt
+    userSessionsId
+    owner
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.GetSessionQueryVariables,
+  APITypes.GetSessionQuery
+>;
+export const listSessions = /* GraphQL */ `query ListSessions(
+  $filter: ModelSessionFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  listSessions(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    items {
+      id
+      userId
+      sessionId
+      createdAt
+      updatedAt
+      userSessionsId
+      owner
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.ListSessionsQueryVariables,
+  APITypes.ListSessionsQuery
+>;
+export const getCartItem = /* GraphQL */ `query GetCartItem($id: ID!) {
+  getCartItem(id: $id) {
+    id
+    sessionId
+    productId
+    quantity
+    session {
+      id
+      userId
+      sessionId
+      createdAt
+      updatedAt
+      userSessionsId
+      owner
+      __typename
+    }
+    product {
+      id
+      name
+      description
+      price
+      isArchived
+      image
+      stripePriceId
+      stripeProductId
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    createdAt
+    updatedAt
+    productCartItemsId
+    sessionCartItemsId
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.GetCartItemQueryVariables,
+  APITypes.GetCartItemQuery
+>;
+export const listCartItems = /* GraphQL */ `query ListCartItems(
+  $filter: ModelCartItemFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  listCartItems(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    items {
+      id
+      sessionId
+      productId
+      quantity
+      createdAt
+      updatedAt
+      productCartItemsId
+      sessionCartItemsId
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.ListCartItemsQueryVariables,
+  APITypes.ListCartItemsQuery
+>;
+export const getOrder = /* GraphQL */ `query GetOrder($id: ID!) {
+  getOrder(id: $id) {
+    id
+    userId
+    total
+    status
+    user {
+      id
+      userId
+      username
+      firstName
+      lastName
+      isArchived
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    items {
+      nextToken
+      __typename
+    }
+    createdAt
+    updatedAt
+    userOrdersId
+    owner
+    __typename
+  }
+}
+` as GeneratedQuery<APITypes.GetOrderQueryVariables, APITypes.GetOrderQuery>;
+export const listOrders = /* GraphQL */ `query ListOrders(
+  $filter: ModelOrderFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  listOrders(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    items {
+      id
+      userId
+      total
+      status
+      createdAt
+      updatedAt
+      userOrdersId
+      owner
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.ListOrdersQueryVariables,
+  APITypes.ListOrdersQuery
+>;
+export const getOrderItem = /* GraphQL */ `query GetOrderItem($id: ID!) {
+  getOrderItem(id: $id) {
+    id
+    orderId
+    productId
+    quantity
+    price
+    order {
+      id
+      userId
+      total
+      status
+      createdAt
+      updatedAt
+      userOrdersId
+      owner
+      __typename
+    }
+    product {
+      id
+      name
+      description
+      price
+      isArchived
+      image
+      stripePriceId
+      stripeProductId
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    createdAt
+    updatedAt
+    productOrderItemsId
+    orderItemsId
+    owner
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.GetOrderItemQueryVariables,
+  APITypes.GetOrderItemQuery
+>;
+export const listOrderItems = /* GraphQL */ `query ListOrderItems(
+  $filter: ModelOrderItemFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  listOrderItems(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    items {
+      id
+      orderId
+      productId
+      quantity
+      price
+      createdAt
+      updatedAt
+      productOrderItemsId
+      orderItemsId
+      owner
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.ListOrderItemsQueryVariables,
+  APITypes.ListOrderItemsQuery
+>;

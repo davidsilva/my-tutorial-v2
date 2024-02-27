@@ -21,6 +21,8 @@ type Product
   image: String
   stripePriceId: String
   stripeProductId: String
+  cartItems: [CartItem] @hasMany
+  orderItems: [OrderItem] @hasMany
 }
 
 type Review
@@ -64,9 +66,127 @@ type User
     ]
   ) {
   id: ID!
+  userId: String!
   username: String!
   firstName: String
   lastName: String
   isArchived: Boolean
   reviews: [Review] @hasMany
+  sessions: [Session] @hasMany
+  orders: [Order] @hasMany
 }
+
+type Session
+  @model
+  @auth(
+    rules: [
+      { allow: owner, operations: [read, create, update] }
+      {
+        allow: private
+        provider: userPools
+        operations: [read, create, update]
+      }
+      { allow: public, provider: iam, operations: [read, create, update] }
+      {
+        allow: groups
+        groups: ["adminUsers"]
+        operations: [read, create, update]
+      }
+    ]
+  ) {
+  id: ID!
+  userId: ID
+  sessionId: String!
+  cartItems: [CartItem] @hasMany
+  user: User @belongsTo(fields: ["userId"])
+}
+
+type CartItem
+  @model
+  @auth(
+    rules: [
+      { allow: public, provider: iam, operations: [read, create, update] }
+      {
+        allow: private
+        provider: userPools
+        operations: [read, create, update]
+      }
+      {
+        allow: groups
+        groups: ["adminUsers"]
+        operations: [read, create, update, delete]
+      }
+    ]
+  ) {
+  id: ID!
+  sessionId: ID!
+  productId: ID!
+  quantity: Int!
+  session: Session @belongsTo(fields: ["sessionId"])
+  product: Product @belongsTo(fields: ["productId"])
+}
+
+type Order
+  @model
+  @auth(
+    rules: [
+      { allow: owner, operations: [read, create, update] }
+      { allow: private, provider: userPools, operations: [read] }
+      {
+        allow: groups
+        groups: ["adminUsers"]
+        operations: [read, create, update]
+      }
+    ]
+  ) {
+  id: ID!
+  userId: ID!
+  total: Int!
+  status: OrderStatus!
+  user: User @belongsTo(fields: ["userId"])
+  items: [OrderItem] @hasMany
+}
+
+type OrderItem
+  @model
+  @auth(
+    rules: [
+      { allow: owner, operations: [read, create, update] }
+      { allow: private, provider: userPools, operations: [read] }
+      {
+        allow: groups
+        groups: ["adminUsers"]
+        operations: [read, create, update]
+      }
+    ]
+  ) {
+  id: ID!
+  orderId: ID!
+  productId: ID!
+  quantity: Int!
+  price: Int!
+  order: Order @belongsTo(fields: ["orderId"])
+  product: Product @belongsTo(fields: ["productId"])
+}
+
+enum OrderStatus {
+  PENDING
+  IN_PROGRESS
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+# input ProcessOrderInput {
+#   id: ID!
+#   cart: [CartItem]
+#   total: Int!
+#   token: String!
+#   address: String
+# }
+
+# type Mutation {
+#   doProcessOrder(input: ProcessOrderInput!): OrderStatus
+#     @function(name: "processOrder-${env}")
+#     @function(name: "createOrder-${env}")
+# }

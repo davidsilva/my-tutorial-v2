@@ -25,6 +25,14 @@ export const createProduct = /* GraphQL */ `mutation CreateProduct(
     image
     stripePriceId
     stripeProductId
+    cartItems {
+      nextToken
+      __typename
+    }
+    orderItems {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     owner
@@ -52,6 +60,14 @@ export const updateProduct = /* GraphQL */ `mutation UpdateProduct(
     image
     stripePriceId
     stripeProductId
+    cartItems {
+      nextToken
+      __typename
+    }
+    orderItems {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     owner
@@ -79,6 +95,14 @@ export const deleteProduct = /* GraphQL */ `mutation DeleteProduct(
     image
     stripePriceId
     stripeProductId
+    cartItems {
+      nextToken
+      __typename
+    }
+    orderItems {
+      nextToken
+      __typename
+    }
     createdAt
     updatedAt
     owner
@@ -114,6 +138,7 @@ export const createReview = /* GraphQL */ `mutation CreateReview(
     isArchived
     user {
       id
+      userId
       username
       firstName
       lastName
@@ -160,6 +185,7 @@ export const updateReview = /* GraphQL */ `mutation UpdateReview(
     isArchived
     user {
       id
+      userId
       username
       firstName
       lastName
@@ -206,6 +232,7 @@ export const deleteReview = /* GraphQL */ `mutation DeleteReview(
     isArchived
     user {
       id
+      userId
       username
       firstName
       lastName
@@ -233,11 +260,20 @@ export const createUser = /* GraphQL */ `mutation CreateUser(
 ) {
   createUser(input: $input, condition: $condition) {
     id
+    userId
     username
     firstName
     lastName
     isArchived
     reviews {
+      nextToken
+      __typename
+    }
+    sessions {
+      nextToken
+      __typename
+    }
+    orders {
       nextToken
       __typename
     }
@@ -257,11 +293,20 @@ export const updateUser = /* GraphQL */ `mutation UpdateUser(
 ) {
   updateUser(input: $input, condition: $condition) {
     id
+    userId
     username
     firstName
     lastName
     isArchived
     reviews {
+      nextToken
+      __typename
+    }
+    sessions {
+      nextToken
+      __typename
+    }
+    orders {
       nextToken
       __typename
     }
@@ -281,11 +326,20 @@ export const deleteUser = /* GraphQL */ `mutation DeleteUser(
 ) {
   deleteUser(input: $input, condition: $condition) {
     id
+    userId
     username
     firstName
     lastName
     isArchived
     reviews {
+      nextToken
+      __typename
+    }
+    sessions {
+      nextToken
+      __typename
+    }
+    orders {
       nextToken
       __typename
     }
@@ -298,4 +352,490 @@ export const deleteUser = /* GraphQL */ `mutation DeleteUser(
 ` as GeneratedMutation<
   APITypes.DeleteUserMutationVariables,
   APITypes.DeleteUserMutation
+>;
+export const createSession = /* GraphQL */ `mutation CreateSession(
+  $input: CreateSessionInput!
+  $condition: ModelSessionConditionInput
+) {
+  createSession(input: $input, condition: $condition) {
+    id
+    userId
+    sessionId
+    cartItems {
+      nextToken
+      __typename
+    }
+    user {
+      id
+      userId
+      username
+      firstName
+      lastName
+      isArchived
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    createdAt
+    updatedAt
+    userSessionsId
+    owner
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.CreateSessionMutationVariables,
+  APITypes.CreateSessionMutation
+>;
+export const updateSession = /* GraphQL */ `mutation UpdateSession(
+  $input: UpdateSessionInput!
+  $condition: ModelSessionConditionInput
+) {
+  updateSession(input: $input, condition: $condition) {
+    id
+    userId
+    sessionId
+    cartItems {
+      nextToken
+      __typename
+    }
+    user {
+      id
+      userId
+      username
+      firstName
+      lastName
+      isArchived
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    createdAt
+    updatedAt
+    userSessionsId
+    owner
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.UpdateSessionMutationVariables,
+  APITypes.UpdateSessionMutation
+>;
+export const deleteSession = /* GraphQL */ `mutation DeleteSession(
+  $input: DeleteSessionInput!
+  $condition: ModelSessionConditionInput
+) {
+  deleteSession(input: $input, condition: $condition) {
+    id
+    userId
+    sessionId
+    cartItems {
+      nextToken
+      __typename
+    }
+    user {
+      id
+      userId
+      username
+      firstName
+      lastName
+      isArchived
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    createdAt
+    updatedAt
+    userSessionsId
+    owner
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.DeleteSessionMutationVariables,
+  APITypes.DeleteSessionMutation
+>;
+export const createCartItem = /* GraphQL */ `mutation CreateCartItem(
+  $input: CreateCartItemInput!
+  $condition: ModelCartItemConditionInput
+) {
+  createCartItem(input: $input, condition: $condition) {
+    id
+    sessionId
+    productId
+    quantity
+    session {
+      id
+      userId
+      sessionId
+      createdAt
+      updatedAt
+      userSessionsId
+      owner
+      __typename
+    }
+    product {
+      id
+      name
+      description
+      price
+      isArchived
+      image
+      stripePriceId
+      stripeProductId
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    createdAt
+    updatedAt
+    productCartItemsId
+    sessionCartItemsId
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.CreateCartItemMutationVariables,
+  APITypes.CreateCartItemMutation
+>;
+export const updateCartItem = /* GraphQL */ `mutation UpdateCartItem(
+  $input: UpdateCartItemInput!
+  $condition: ModelCartItemConditionInput
+) {
+  updateCartItem(input: $input, condition: $condition) {
+    id
+    sessionId
+    productId
+    quantity
+    session {
+      id
+      userId
+      sessionId
+      createdAt
+      updatedAt
+      userSessionsId
+      owner
+      __typename
+    }
+    product {
+      id
+      name
+      description
+      price
+      isArchived
+      image
+      stripePriceId
+      stripeProductId
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    createdAt
+    updatedAt
+    productCartItemsId
+    sessionCartItemsId
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.UpdateCartItemMutationVariables,
+  APITypes.UpdateCartItemMutation
+>;
+export const deleteCartItem = /* GraphQL */ `mutation DeleteCartItem(
+  $input: DeleteCartItemInput!
+  $condition: ModelCartItemConditionInput
+) {
+  deleteCartItem(input: $input, condition: $condition) {
+    id
+    sessionId
+    productId
+    quantity
+    session {
+      id
+      userId
+      sessionId
+      createdAt
+      updatedAt
+      userSessionsId
+      owner
+      __typename
+    }
+    product {
+      id
+      name
+      description
+      price
+      isArchived
+      image
+      stripePriceId
+      stripeProductId
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    createdAt
+    updatedAt
+    productCartItemsId
+    sessionCartItemsId
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.DeleteCartItemMutationVariables,
+  APITypes.DeleteCartItemMutation
+>;
+export const createOrder = /* GraphQL */ `mutation CreateOrder(
+  $input: CreateOrderInput!
+  $condition: ModelOrderConditionInput
+) {
+  createOrder(input: $input, condition: $condition) {
+    id
+    userId
+    total
+    status
+    user {
+      id
+      userId
+      username
+      firstName
+      lastName
+      isArchived
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    items {
+      nextToken
+      __typename
+    }
+    createdAt
+    updatedAt
+    userOrdersId
+    owner
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.CreateOrderMutationVariables,
+  APITypes.CreateOrderMutation
+>;
+export const updateOrder = /* GraphQL */ `mutation UpdateOrder(
+  $input: UpdateOrderInput!
+  $condition: ModelOrderConditionInput
+) {
+  updateOrder(input: $input, condition: $condition) {
+    id
+    userId
+    total
+    status
+    user {
+      id
+      userId
+      username
+      firstName
+      lastName
+      isArchived
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    items {
+      nextToken
+      __typename
+    }
+    createdAt
+    updatedAt
+    userOrdersId
+    owner
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.UpdateOrderMutationVariables,
+  APITypes.UpdateOrderMutation
+>;
+export const deleteOrder = /* GraphQL */ `mutation DeleteOrder(
+  $input: DeleteOrderInput!
+  $condition: ModelOrderConditionInput
+) {
+  deleteOrder(input: $input, condition: $condition) {
+    id
+    userId
+    total
+    status
+    user {
+      id
+      userId
+      username
+      firstName
+      lastName
+      isArchived
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    items {
+      nextToken
+      __typename
+    }
+    createdAt
+    updatedAt
+    userOrdersId
+    owner
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.DeleteOrderMutationVariables,
+  APITypes.DeleteOrderMutation
+>;
+export const createOrderItem = /* GraphQL */ `mutation CreateOrderItem(
+  $input: CreateOrderItemInput!
+  $condition: ModelOrderItemConditionInput
+) {
+  createOrderItem(input: $input, condition: $condition) {
+    id
+    orderId
+    productId
+    quantity
+    price
+    order {
+      id
+      userId
+      total
+      status
+      createdAt
+      updatedAt
+      userOrdersId
+      owner
+      __typename
+    }
+    product {
+      id
+      name
+      description
+      price
+      isArchived
+      image
+      stripePriceId
+      stripeProductId
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    createdAt
+    updatedAt
+    productOrderItemsId
+    orderItemsId
+    owner
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.CreateOrderItemMutationVariables,
+  APITypes.CreateOrderItemMutation
+>;
+export const updateOrderItem = /* GraphQL */ `mutation UpdateOrderItem(
+  $input: UpdateOrderItemInput!
+  $condition: ModelOrderItemConditionInput
+) {
+  updateOrderItem(input: $input, condition: $condition) {
+    id
+    orderId
+    productId
+    quantity
+    price
+    order {
+      id
+      userId
+      total
+      status
+      createdAt
+      updatedAt
+      userOrdersId
+      owner
+      __typename
+    }
+    product {
+      id
+      name
+      description
+      price
+      isArchived
+      image
+      stripePriceId
+      stripeProductId
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    createdAt
+    updatedAt
+    productOrderItemsId
+    orderItemsId
+    owner
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.UpdateOrderItemMutationVariables,
+  APITypes.UpdateOrderItemMutation
+>;
+export const deleteOrderItem = /* GraphQL */ `mutation DeleteOrderItem(
+  $input: DeleteOrderItemInput!
+  $condition: ModelOrderItemConditionInput
+) {
+  deleteOrderItem(input: $input, condition: $condition) {
+    id
+    orderId
+    productId
+    quantity
+    price
+    order {
+      id
+      userId
+      total
+      status
+      createdAt
+      updatedAt
+      userOrdersId
+      owner
+      __typename
+    }
+    product {
+      id
+      name
+      description
+      price
+      isArchived
+      image
+      stripePriceId
+      stripeProductId
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    createdAt
+    updatedAt
+    productOrderItemsId
+    orderItemsId
+    owner
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.DeleteOrderItemMutationVariables,
+  APITypes.DeleteOrderItemMutation
 >;

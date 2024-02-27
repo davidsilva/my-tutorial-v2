@@ -29,17 +29,20 @@ export default function UserCreateForm(props) {
     ...rest
   } = props;
   const initialValues = {
+    userId: "",
     username: "",
     firstName: "",
     lastName: "",
     isArchived: false,
   };
+  const [userId, setUserId] = React.useState(initialValues.userId);
   const [username, setUsername] = React.useState(initialValues.username);
   const [firstName, setFirstName] = React.useState(initialValues.firstName);
   const [lastName, setLastName] = React.useState(initialValues.lastName);
   const [isArchived, setIsArchived] = React.useState(initialValues.isArchived);
   const [errors, setErrors] = React.useState({});
   const resetStateValues = () => {
+    setUserId(initialValues.userId);
     setUsername(initialValues.username);
     setFirstName(initialValues.firstName);
     setLastName(initialValues.lastName);
@@ -47,6 +50,7 @@ export default function UserCreateForm(props) {
     setErrors({});
   };
   const validations = {
+    userId: [{ type: "Required" }],
     username: [{ type: "Required" }],
     firstName: [],
     lastName: [],
@@ -78,6 +82,7 @@ export default function UserCreateForm(props) {
       onSubmit={async (event) => {
         event.preventDefault();
         let modelFields = {
+          userId,
           username,
           firstName,
           lastName,
@@ -136,6 +141,34 @@ export default function UserCreateForm(props) {
       {...rest}
     >
       <TextField
+        label="User id"
+        isRequired={true}
+        isReadOnly={false}
+        value={userId}
+        onChange={(e) => {
+          let { value } = e.target;
+          if (onChange) {
+            const modelFields = {
+              userId: value,
+              username,
+              firstName,
+              lastName,
+              isArchived,
+            };
+            const result = onChange(modelFields);
+            value = result?.userId ?? value;
+          }
+          if (errors.userId?.hasError) {
+            runValidationTasks("userId", value);
+          }
+          setUserId(value);
+        }}
+        onBlur={() => runValidationTasks("userId", userId)}
+        errorMessage={errors.userId?.errorMessage}
+        hasError={errors.userId?.hasError}
+        {...getOverrideProps(overrides, "userId")}
+      ></TextField>
+      <TextField
         label="Username"
         isRequired={true}
         isReadOnly={false}
@@ -144,6 +177,7 @@ export default function UserCreateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
+              userId,
               username: value,
               firstName,
               lastName,
@@ -171,6 +205,7 @@ export default function UserCreateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
+              userId,
               username,
               firstName: value,
               lastName,
@@ -198,6 +233,7 @@ export default function UserCreateForm(props) {
           let { value } = e.target;
           if (onChange) {
             const modelFields = {
+              userId,
               username,
               firstName,
               lastName: value,
@@ -225,6 +261,7 @@ export default function UserCreateForm(props) {
           let value = e.target.checked;
           if (onChange) {
             const modelFields = {
+              userId,
               username,
               firstName,
               lastName,
