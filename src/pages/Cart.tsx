@@ -83,7 +83,7 @@ const Cart = () => {
             <td colSpan={3}>Total</td>
             <td>{totalAmount}</td>
             <td>
-              <Button onClick={() => handleClearCart()}>Clear</Button>
+              <Button onClick={() => handleClearCart()}>Clear Cart</Button>
               <Button onClick={() => handleCheckout()}>Checkout</Button>
             </td>
           </tr>
