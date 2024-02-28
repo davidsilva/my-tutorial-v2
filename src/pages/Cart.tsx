@@ -54,13 +54,28 @@ const Cart = () => {
           {cartItems.map((item) => (
             <tr key={item.id}>
               <td>{item.name}</td>
-              <td>{item.price}</td>
+              <td>{item.price / 100}</td>
               <td>{item.quantity}</td>
-              <td>{item.price * item.quantity}</td>
+              <td>{(item.price * item.quantity) / 100}</td>
               <td>
-                <Button onClick={() => handleIncrementQuantity(item)}>+</Button>
-                <Button onClick={() => HandleDecrementQuantity(item)}>-</Button>
-                <Button onClick={() => handleRemoveItem(item)}>X</Button>
+                <Button
+                  onClick={() => handleIncrementQuantity(item)}
+                  aria-label="increment quantity"
+                >
+                  +
+                </Button>
+                <Button
+                  onClick={() => HandleDecrementQuantity(item)}
+                  aria-label="decrement quantity"
+                >
+                  -
+                </Button>
+                <Button
+                  onClick={() => handleRemoveItem(item)}
+                  aria-label="remove from cart"
+                >
+                  X
+                </Button>
               </td>
             </tr>
           ))}
