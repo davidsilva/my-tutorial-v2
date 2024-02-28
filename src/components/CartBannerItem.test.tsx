@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { CartContextProvider } from "../context/CartContext";
 import { MemoryRouter } from "react-router-dom";
 import CartBannerItem from "./CartBannerItem";
@@ -81,22 +81,25 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
-const renderComponent = () => {
-  render(
-    <MemoryRouter>
-      <AuthContextProvider>
-        <CartContextProvider>
-          <CartBannerItem />
-        </CartContextProvider>
-      </AuthContextProvider>
-    </MemoryRouter>
-  );
+const renderComponent = async () => {
+  await waitFor(() => {
+    render(
+      <MemoryRouter>
+        <AuthContextProvider>
+          <CartContextProvider>
+            <CartBannerItem />
+          </CartContextProvider>
+        </AuthContextProvider>
+      </MemoryRouter>
+    );
+  });
 };
 
 describe("CartBannerItem", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
-    vi.mocked(useCartContextMock).mockReturnValue({
+
+    useCartContextMock.mockReturnValue({
       cartItems: mockCartItems,
       addToCart: vi.fn(),
       removeFromCart: vi.fn(),
@@ -104,17 +107,17 @@ describe("CartBannerItem", () => {
       clearCart: vi.fn(),
       incrementQuantity: vi.fn(),
       decrementQuantity: vi.fn(),
+      totalQuantity: 9,
     });
 
-    renderComponent();
+    await renderComponent();
   });
   test("renders without crashing", () => {
-    screen.debug();
     expect(screen.getByRole("button")).toBeInTheDocument();
   });
 
-  test("displays the correct number of items in the cart", () => {
-    expect(screen.getByText("3 Cart")).toBeInTheDocument();
+  test("displays the correct number of items in the cart", async () => {
+    expect(screen.getByText("9 Cart")).toBeInTheDocument();
   });
 
   test("navigates to the cart page when clicked", async () => {
