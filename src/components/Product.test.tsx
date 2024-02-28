@@ -7,12 +7,15 @@ import { Product as ProductType, Review } from "../API";
 import { archiveProduct, restoreProduct } from "../graphql/customMutations";
 import { AuthContextProvider } from "../context/AuthContext";
 import { ReactNode } from "react";
+import { CartContextProvider } from "../context/CartContext";
 
 const renderWithAuthContext = async (component: ReactNode) => {
   await waitFor(() => {
     render(
       <MemoryRouter>
-        <AuthContextProvider>{component}</AuthContextProvider>
+        <AuthContextProvider>
+          <CartContextProvider>{component}</CartContextProvider>
+        </AuthContextProvider>
       </MemoryRouter>
     );
   });

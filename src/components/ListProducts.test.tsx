@@ -6,12 +6,15 @@ import { ReactNode } from "react";
 import { ProductWithReviews, ListProductsQueryWithReviews } from "../types";
 import { Review } from "../API";
 import userEvent from "@testing-library/user-event";
+import { CartContextProvider } from "../context/CartContext";
 
 const renderWithAuthContext = async (component: ReactNode) => {
   await waitFor(() => {
     render(
       <MemoryRouter>
-        <AuthContextProvider>{component}</AuthContextProvider>
+        <AuthContextProvider>
+          <CartContextProvider>{component}</CartContextProvider>
+        </AuthContextProvider>
       </MemoryRouter>
     );
   });

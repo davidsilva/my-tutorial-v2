@@ -3,6 +3,7 @@ import { GetProductWithReviewsQuery } from "../API";
 import ProductDetail from "./ProductDetail";
 import { MemoryRouter } from "react-router-dom";
 import { AuthContextProvider } from "../context/AuthContext";
+import { CartContextProvider } from "../context/CartContext";
 
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
@@ -111,7 +112,9 @@ const renderProductDetail = async () => {
     render(
       <MemoryRouter>
         <AuthContextProvider>
-          <ProductDetail />
+          <CartContextProvider>
+            <ProductDetail />
+          </CartContextProvider>
         </AuthContextProvider>
       </MemoryRouter>
     );

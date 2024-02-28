@@ -4,12 +4,15 @@ import Landing from "./Landing";
 import { MemoryRouter } from "react-router-dom";
 import { AuthContextProvider, useAuthContext } from "../context/AuthContext";
 import { ReactNode } from "react";
+import { CartContextProvider } from "../context/CartContext";
 
 const renderWithAuthContext = async (component: ReactNode) => {
   await waitFor(() => {
     render(
       <MemoryRouter>
-        <AuthContextProvider>{component}</AuthContextProvider>
+        <AuthContextProvider>
+          <CartContextProvider>{component}</CartContextProvider>
+        </AuthContextProvider>
       </MemoryRouter>
     );
   });
