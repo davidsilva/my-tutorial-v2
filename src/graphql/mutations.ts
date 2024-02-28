@@ -8,6 +8,13 @@ type GeneratedMutation<InputType, OutputType> = string & {
   __generatedMutationOutput: OutputType;
 };
 
+export const processOrder = /* GraphQL */ `mutation ProcessOrder($input: ProcessOrderInput!) {
+  processOrder(input: $input)
+}
+` as GeneratedMutation<
+  APITypes.ProcessOrderMutationVariables,
+  APITypes.ProcessOrderMutation
+>;
 export const createProduct = /* GraphQL */ `mutation CreateProduct(
   $input: CreateProductInput!
   $condition: ModelProductConditionInput

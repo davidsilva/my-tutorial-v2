@@ -11,6 +11,7 @@ export async function handler(event, context) {
         id: { S: event.request.userAttributes.sub },
         __typename: { S: "User" },
         username: { S: event.userName },
+        userId: { S: event.request.userAttributes.sub },
         email: { S: event.request.userAttributes.email },
         createdAt: { S: date.toISOString() },
         updatedAt: { S: date.toISOString() },

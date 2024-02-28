@@ -26,6 +26,13 @@ export type AmplifyDependentResourcesAttributes = {
     }
   },
   "function": {
+    "createOrder": {
+      "Arn": "string",
+      "LambdaExecutionRole": "string",
+      "LambdaExecutionRoleArn": "string",
+      "Name": "string",
+      "Region": "string"
+    },
     "createProduct": {
       "Arn": "string",
       "LambdaExecutionRole": "string",
@@ -34,6 +41,13 @@ export type AmplifyDependentResourcesAttributes = {
       "Region": "string"
     },
     "myTutorialV2AuthPostConfirmation": {
+      "Arn": "string",
+      "LambdaExecutionRole": "string",
+      "LambdaExecutionRoleArn": "string",
+      "Name": "string",
+      "Region": "string"
+    },
+    "processPayment": {
       "Arn": "string",
       "LambdaExecutionRole": "string",
       "LambdaExecutionRoleArn": "string",

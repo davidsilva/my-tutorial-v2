@@ -242,6 +242,21 @@ export type ModelProductConnection = {
   nextToken?: string | null,
 };
 
+export type ProcessOrderInput = {
+  id: string,
+  cart?: Array< CartItemInput | null > | null,
+  total: number,
+  token: string,
+  address?: string | null,
+};
+
+export type CartItemInput = {
+  id: string,
+  name?: string | null,
+  price: number,
+  quantity: number,
+};
+
 export type CreateProductInput = {
   id?: string | null,
   name: string,
@@ -803,6 +818,14 @@ export type GetUserWithReviewsQuery = {
       nextToken?: string | null,
     } | null,
   } | null,
+};
+
+export type ProcessOrderMutationVariables = {
+  input: ProcessOrderInput,
+};
+
+export type ProcessOrderMutation = {
+  processOrder?: OrderStatus | null,
 };
 
 export type CreateProductMutationVariables = {

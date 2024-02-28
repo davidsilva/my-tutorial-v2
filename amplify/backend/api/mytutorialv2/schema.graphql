@@ -177,16 +177,23 @@ enum OrderStatus {
   CANCELLED
 }
 
-# input ProcessOrderInput {
-#   id: ID!
-#   cart: [CartItem]
-#   total: Int!
-#   token: String!
-#   address: String
-# }
+input CartItemInput {
+  id: ID!
+  name: String
+  price: Int!
+  quantity: Int!
+}
 
-# type Mutation {
-#   doProcessOrder(input: ProcessOrderInput!): OrderStatus
-#     @function(name: "processOrder-${env}")
-#     @function(name: "createOrder-${env}")
-# }
+input ProcessOrderInput {
+  id: ID!
+  cart: [CartItemInput]
+  total: Int!
+  token: String!
+  address: String
+}
+
+type Mutation {
+  processOrder(input: ProcessOrderInput!): OrderStatus
+    @function(name: "processPayment-${env}")
+    @function(name: "createOrder-${env}")
+}

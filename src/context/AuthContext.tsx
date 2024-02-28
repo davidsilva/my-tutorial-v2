@@ -95,6 +95,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   const checkUser = useCallback(async () => {
     try {
       const currentUser = await getCurrentUser();
+      console.log("currentUser", currentUser);
       setIsLoggedIn(true);
       localStorage.setItem("isLoggedIn", "true");
       setUser(currentUser);
