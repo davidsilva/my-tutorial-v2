@@ -71,7 +71,7 @@ describe("ProtectedRoute", () => {
       );
     });
 
-    expect(mockNavigate).toHaveBeenCalledWith("/not-authorized");
+    expect(mockNavigate).toHaveBeenCalledWith("/signin");
   });
 
   test("renders children when user is logged in and has correct role", async () => {
