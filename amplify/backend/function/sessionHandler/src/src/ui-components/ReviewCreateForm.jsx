@@ -6,16 +6,20 @@
 
 /* eslint-disable */
 import * as React from "react";
-import { Button, Flex, Grid, TextField } from "@aws-amplify/ui-react";
+import {
+  Button,
+  Flex,
+  Grid,
+  SwitchField,
+  TextField,
+} from "@aws-amplify/ui-react";
 import { fetchByPath, getOverrideProps, validateField } from "./utils";
 import { generateClient } from "aws-amplify/api";
-import { getSession } from "../graphql/queries";
-import { updateSession } from "../graphql/mutations";
+import { createReview } from "../graphql/mutations";
 const client = generateClient();
-export default function SessionUpdateForm(props) {
+export default function ReviewCreateForm(props) {
   const {
-    id: idProp,
-    session: sessionModelProp,
+    clearOnSuccess = true,
     onSuccess,
     onError,
     onSubmit,
@@ -25,35 +29,24 @@ export default function SessionUpdateForm(props) {
     ...rest
   } = props;
   const initialValues = {
-    deletedAt: "",
+    rating: "",
+    content: "",
+    isArchived: false,
   };
-  const [deletedAt, setDeletedAt] = React.useState(initialValues.deletedAt);
+  const [rating, setRating] = React.useState(initialValues.rating);
+  const [content, setContent] = React.useState(initialValues.content);
+  const [isArchived, setIsArchived] = React.useState(initialValues.isArchived);
   const [errors, setErrors] = React.useState({});
   const resetStateValues = () => {
-    const cleanValues = sessionRecord
-      ? { ...initialValues, ...sessionRecord }
-      : initialValues;
-    setDeletedAt(cleanValues.deletedAt);
+    setRating(initialValues.rating);
+    setContent(initialValues.content);
+    setIsArchived(initialValues.isArchived);
     setErrors({});
   };
-  const [sessionRecord, setSessionRecord] = React.useState(sessionModelProp);
-  React.useEffect(() => {
-    const queryData = async () => {
-      const record = idProp
-        ? (
-            await client.graphql({
-              query: getSession.replaceAll("__typename", ""),
-              variables: { id: idProp },
-            })
-          )?.data?.getSession
-        : sessionModelProp;
-      setSessionRecord(record);
-    };
-    queryData();
-  }, [idProp, sessionModelProp]);
-  React.useEffect(resetStateValues, [sessionRecord]);
   const validations = {
-    deletedAt: [],
+    rating: [],
+    content: [],
+    isArchived: [],
   };
   const runValidationTasks = async (
     fieldName,
@@ -72,23 +65,6 @@ export default function SessionUpdateForm(props) {
     setErrors((errors) => ({ ...errors, [fieldName]: validationResponse }));
     return validationResponse;
   };
-  const convertToLocal = (date) => {
-    const df = new Intl.DateTimeFormat("default", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      calendar: "iso8601",
-      numberingSystem: "latn",
-      hourCycle: "h23",
-    });
-    const parts = df.formatToParts(date).reduce((acc, part) => {
-      acc[part.type] = part.value;
-      return acc;
-    }, {});
-    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
-  };
   return (
     <Grid
       as="form"
@@ -98,7 +74,9 @@ export default function SessionUpdateForm(props) {
       onSubmit={async (event) => {
         event.preventDefault();
         let modelFields = {
-          deletedAt: deletedAt ?? null,
+          rating,
+          content,
+          isArchived,
         };
         const validationResponses = await Promise.all(
           Object.keys(validations).reduce((promises, fieldName) => {
@@ -129,16 +107,18 @@ export default function SessionUpdateForm(props) {
             }
           });
           await client.graphql({
-            query: updateSession.replaceAll("__typename", ""),
+            query: createReview.replaceAll("__typename", ""),
             variables: {
               input: {
-                id: sessionRecord.id,
                 ...modelFields,
               },
             },
           });
           if (onSuccess) {
             onSuccess(modelFields);
+          }
+          if (clearOnSuccess) {
+            resetStateValues();
           }
         } catch (err) {
           if (onError) {
@@ -147,48 +127,103 @@ export default function SessionUpdateForm(props) {
           }
         }
       }}
-      {...getOverrideProps(overrides, "SessionUpdateForm")}
+      {...getOverrideProps(overrides, "ReviewCreateForm")}
       {...rest}
     >
       <TextField
-        label="Deleted at"
+        label="Rating"
         isRequired={false}
         isReadOnly={false}
-        type="datetime-local"
-        value={deletedAt && convertToLocal(new Date(deletedAt))}
+        type="number"
+        step="any"
+        value={rating}
         onChange={(e) => {
-          let value =
-            e.target.value === "" ? "" : new Date(e.target.value).toISOString();
+          let value = isNaN(parseInt(e.target.value))
+            ? e.target.value
+            : parseInt(e.target.value);
           if (onChange) {
             const modelFields = {
-              deletedAt: value,
+              rating: value,
+              content,
+              isArchived,
             };
             const result = onChange(modelFields);
-            value = result?.deletedAt ?? value;
+            value = result?.rating ?? value;
           }
-          if (errors.deletedAt?.hasError) {
-            runValidationTasks("deletedAt", value);
+          if (errors.rating?.hasError) {
+            runValidationTasks("rating", value);
           }
-          setDeletedAt(value);
+          setRating(value);
         }}
-        onBlur={() => runValidationTasks("deletedAt", deletedAt)}
-        errorMessage={errors.deletedAt?.errorMessage}
-        hasError={errors.deletedAt?.hasError}
-        {...getOverrideProps(overrides, "deletedAt")}
+        onBlur={() => runValidationTasks("rating", rating)}
+        errorMessage={errors.rating?.errorMessage}
+        hasError={errors.rating?.hasError}
+        {...getOverrideProps(overrides, "rating")}
       ></TextField>
+      <TextField
+        label="Content"
+        isRequired={false}
+        isReadOnly={false}
+        value={content}
+        onChange={(e) => {
+          let { value } = e.target;
+          if (onChange) {
+            const modelFields = {
+              rating,
+              content: value,
+              isArchived,
+            };
+            const result = onChange(modelFields);
+            value = result?.content ?? value;
+          }
+          if (errors.content?.hasError) {
+            runValidationTasks("content", value);
+          }
+          setContent(value);
+        }}
+        onBlur={() => runValidationTasks("content", content)}
+        errorMessage={errors.content?.errorMessage}
+        hasError={errors.content?.hasError}
+        {...getOverrideProps(overrides, "content")}
+      ></TextField>
+      <SwitchField
+        label="Is archived"
+        defaultChecked={false}
+        isDisabled={false}
+        isChecked={isArchived}
+        onChange={(e) => {
+          let value = e.target.checked;
+          if (onChange) {
+            const modelFields = {
+              rating,
+              content,
+              isArchived: value,
+            };
+            const result = onChange(modelFields);
+            value = result?.isArchived ?? value;
+          }
+          if (errors.isArchived?.hasError) {
+            runValidationTasks("isArchived", value);
+          }
+          setIsArchived(value);
+        }}
+        onBlur={() => runValidationTasks("isArchived", isArchived)}
+        errorMessage={errors.isArchived?.errorMessage}
+        hasError={errors.isArchived?.hasError}
+        {...getOverrideProps(overrides, "isArchived")}
+      ></SwitchField>
       <Flex
         justifyContent="space-between"
         {...getOverrideProps(overrides, "CTAFlex")}
       >
         <Button
-          children="Reset"
+          children="Clear"
           type="reset"
           onClick={(event) => {
             event.preventDefault();
             resetStateValues();
           }}
-          isDisabled={!(idProp || sessionModelProp)}
-          {...getOverrideProps(overrides, "ResetButton")}
+          {...getOverrideProps(overrides, "ClearButton")}
         ></Button>
         <Flex
           gap="15px"
@@ -198,10 +233,7 @@ export default function SessionUpdateForm(props) {
             children="Submit"
             type="submit"
             variation="primary"
-            isDisabled={
-              !(idProp || sessionModelProp) ||
-              Object.values(errors).some((e) => e?.hasError)
-            }
+            isDisabled={Object.values(errors).some((e) => e?.hasError)}
             {...getOverrideProps(overrides, "SubmitButton")}
           ></Button>
         </Flex>

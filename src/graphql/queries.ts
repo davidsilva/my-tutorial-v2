@@ -8,6 +8,60 @@ type GeneratedQuery<InputType, OutputType> = string & {
   __generatedQueryOutput: OutputType;
 };
 
+export const getSession = /* GraphQL */ `query GetSession($id: ID!) {
+  getSession(id: $id) {
+    id
+    userId
+    cartItems {
+      nextToken
+      __typename
+    }
+    user {
+      id
+      userId
+      username
+      firstName
+      lastName
+      isArchived
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    deletedAt
+    createdAt
+    updatedAt
+    userSessionsId
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.GetSessionQueryVariables,
+  APITypes.GetSessionQuery
+>;
+export const listSessions = /* GraphQL */ `query ListSessions(
+  $filter: ModelSessionFilterInput
+  $limit: Int
+  $nextToken: String
+) {
+  listSessions(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    items {
+      id
+      userId
+      deletedAt
+      createdAt
+      updatedAt
+      userSessionsId
+      __typename
+    }
+    nextToken
+    __typename
+  }
+}
+` as GeneratedQuery<
+  APITypes.ListSessionsQueryVariables,
+  APITypes.ListSessionsQuery
+>;
 export const getProduct = /* GraphQL */ `query GetProduct($id: ID!) {
   getProduct(id: $id) {
     id
@@ -185,62 +239,6 @@ export const listUsers = /* GraphQL */ `query ListUsers(
   }
 }
 ` as GeneratedQuery<APITypes.ListUsersQueryVariables, APITypes.ListUsersQuery>;
-export const getSession = /* GraphQL */ `query GetSession($id: ID!) {
-  getSession(id: $id) {
-    id
-    userId
-    sessionId
-    cartItems {
-      nextToken
-      __typename
-    }
-    user {
-      id
-      userId
-      username
-      firstName
-      lastName
-      isArchived
-      createdAt
-      updatedAt
-      owner
-      __typename
-    }
-    createdAt
-    updatedAt
-    userSessionsId
-    owner
-    __typename
-  }
-}
-` as GeneratedQuery<
-  APITypes.GetSessionQueryVariables,
-  APITypes.GetSessionQuery
->;
-export const listSessions = /* GraphQL */ `query ListSessions(
-  $filter: ModelSessionFilterInput
-  $limit: Int
-  $nextToken: String
-) {
-  listSessions(filter: $filter, limit: $limit, nextToken: $nextToken) {
-    items {
-      id
-      userId
-      sessionId
-      createdAt
-      updatedAt
-      userSessionsId
-      owner
-      __typename
-    }
-    nextToken
-    __typename
-  }
-}
-` as GeneratedQuery<
-  APITypes.ListSessionsQueryVariables,
-  APITypes.ListSessionsQuery
->;
 export const getCartItem = /* GraphQL */ `query GetCartItem($id: ID!) {
   getCartItem(id: $id) {
     id
@@ -250,11 +248,10 @@ export const getCartItem = /* GraphQL */ `query GetCartItem($id: ID!) {
     session {
       id
       userId
-      sessionId
+      deletedAt
       createdAt
       updatedAt
       userSessionsId
-      owner
       __typename
     }
     product {

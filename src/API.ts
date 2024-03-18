@@ -67,13 +67,12 @@ export type Session = {
   __typename: "Session",
   id: string,
   userId?: string | null,
-  sessionId: string,
   cartItems?: ModelCartItemConnection | null,
   user?: User | null,
+  deletedAt?: string | null,
   createdAt: string,
   updatedAt: string,
   userSessionsId?: string | null,
-  owner?: string | null,
 };
 
 export type ModelCartItemConnection = {
@@ -257,6 +256,33 @@ export type CartItemInput = {
   quantity: number,
 };
 
+export type CreateSessionInput = {
+  id?: string | null,
+  userId?: string | null,
+  deletedAt?: string | null,
+  userSessionsId?: string | null,
+};
+
+export type ModelSessionConditionInput = {
+  userId?: ModelIDInput | null,
+  deletedAt?: ModelStringInput | null,
+  and?: Array< ModelSessionConditionInput | null > | null,
+  or?: Array< ModelSessionConditionInput | null > | null,
+  not?: ModelSessionConditionInput | null,
+  userSessionsId?: ModelIDInput | null,
+};
+
+export type UpdateSessionInput = {
+  id: string,
+  userId?: string | null,
+  deletedAt?: string | null,
+  userSessionsId?: string | null,
+};
+
+export type DeleteSessionInput = {
+  id: string,
+};
+
 export type CreateProductInput = {
   id?: string | null,
   name: string,
@@ -359,33 +385,6 @@ export type UpdateUserInput = {
 };
 
 export type DeleteUserInput = {
-  id: string,
-};
-
-export type CreateSessionInput = {
-  id?: string | null,
-  userId?: string | null,
-  sessionId: string,
-  userSessionsId?: string | null,
-};
-
-export type ModelSessionConditionInput = {
-  userId?: ModelIDInput | null,
-  sessionId?: ModelStringInput | null,
-  and?: Array< ModelSessionConditionInput | null > | null,
-  or?: Array< ModelSessionConditionInput | null > | null,
-  not?: ModelSessionConditionInput | null,
-  userSessionsId?: ModelIDInput | null,
-};
-
-export type UpdateSessionInput = {
-  id: string,
-  userId?: string | null,
-  sessionId?: string | null,
-  userSessionsId?: string | null,
-};
-
-export type DeleteSessionInput = {
   id: string,
 };
 
@@ -493,6 +492,16 @@ export type DeleteOrderItemInput = {
   id: string,
 };
 
+export type ModelSessionFilterInput = {
+  id?: ModelIDInput | null,
+  userId?: ModelIDInput | null,
+  deletedAt?: ModelStringInput | null,
+  and?: Array< ModelSessionFilterInput | null > | null,
+  or?: Array< ModelSessionFilterInput | null > | null,
+  not?: ModelSessionFilterInput | null,
+  userSessionsId?: ModelIDInput | null,
+};
+
 export type ModelReviewFilterInput = {
   id?: ModelIDInput | null,
   rating?: ModelIntInput | null,
@@ -521,16 +530,6 @@ export type ModelUserConnection = {
   __typename: "ModelUserConnection",
   items:  Array<User | null >,
   nextToken?: string | null,
-};
-
-export type ModelSessionFilterInput = {
-  id?: ModelIDInput | null,
-  userId?: ModelIDInput | null,
-  sessionId?: ModelStringInput | null,
-  and?: Array< ModelSessionFilterInput | null > | null,
-  or?: Array< ModelSessionFilterInput | null > | null,
-  not?: ModelSessionFilterInput | null,
-  userSessionsId?: ModelIDInput | null,
 };
 
 export type ModelCartItemFilterInput = {
@@ -569,17 +568,12 @@ export type ModelOrderItemFilterInput = {
   orderItemsId?: ModelIDInput | null,
 };
 
-export type ModelSubscriptionProductFilterInput = {
+export type ModelSubscriptionSessionFilterInput = {
   id?: ModelSubscriptionIDInput | null,
-  name?: ModelSubscriptionStringInput | null,
-  description?: ModelSubscriptionStringInput | null,
-  price?: ModelSubscriptionIntInput | null,
-  isArchived?: ModelSubscriptionBooleanInput | null,
-  image?: ModelSubscriptionStringInput | null,
-  stripePriceId?: ModelSubscriptionStringInput | null,
-  stripeProductId?: ModelSubscriptionStringInput | null,
-  and?: Array< ModelSubscriptionProductFilterInput | null > | null,
-  or?: Array< ModelSubscriptionProductFilterInput | null > | null,
+  userId?: ModelSubscriptionIDInput | null,
+  deletedAt?: ModelSubscriptionStringInput | null,
+  and?: Array< ModelSubscriptionSessionFilterInput | null > | null,
+  or?: Array< ModelSubscriptionSessionFilterInput | null > | null,
 };
 
 export type ModelSubscriptionIDInput = {
@@ -610,6 +604,19 @@ export type ModelSubscriptionStringInput = {
   beginsWith?: string | null,
   in?: Array< string | null > | null,
   notIn?: Array< string | null > | null,
+};
+
+export type ModelSubscriptionProductFilterInput = {
+  id?: ModelSubscriptionIDInput | null,
+  name?: ModelSubscriptionStringInput | null,
+  description?: ModelSubscriptionStringInput | null,
+  price?: ModelSubscriptionIntInput | null,
+  isArchived?: ModelSubscriptionBooleanInput | null,
+  image?: ModelSubscriptionStringInput | null,
+  stripePriceId?: ModelSubscriptionStringInput | null,
+  stripeProductId?: ModelSubscriptionStringInput | null,
+  and?: Array< ModelSubscriptionProductFilterInput | null > | null,
+  or?: Array< ModelSubscriptionProductFilterInput | null > | null,
 };
 
 export type ModelSubscriptionIntInput = {
@@ -647,14 +654,6 @@ export type ModelSubscriptionUserFilterInput = {
   isArchived?: ModelSubscriptionBooleanInput | null,
   and?: Array< ModelSubscriptionUserFilterInput | null > | null,
   or?: Array< ModelSubscriptionUserFilterInput | null > | null,
-};
-
-export type ModelSubscriptionSessionFilterInput = {
-  id?: ModelSubscriptionIDInput | null,
-  userId?: ModelSubscriptionIDInput | null,
-  sessionId?: ModelSubscriptionStringInput | null,
-  and?: Array< ModelSubscriptionSessionFilterInput | null > | null,
-  or?: Array< ModelSubscriptionSessionFilterInput | null > | null,
 };
 
 export type ModelSubscriptionCartItemFilterInput = {
@@ -826,6 +825,105 @@ export type ProcessOrderMutationVariables = {
 
 export type ProcessOrderMutation = {
   processOrder?: OrderStatus | null,
+};
+
+export type CreateSessionMutationVariables = {
+  input: CreateSessionInput,
+  condition?: ModelSessionConditionInput | null,
+};
+
+export type CreateSessionMutation = {
+  createSession?:  {
+    __typename: "Session",
+    id: string,
+    userId?: string | null,
+    cartItems?:  {
+      __typename: "ModelCartItemConnection",
+      nextToken?: string | null,
+    } | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      userId: string,
+      username: string,
+      firstName?: string | null,
+      lastName?: string | null,
+      isArchived?: boolean | null,
+      createdAt: string,
+      updatedAt: string,
+      owner?: string | null,
+    } | null,
+    deletedAt?: string | null,
+    createdAt: string,
+    updatedAt: string,
+    userSessionsId?: string | null,
+  } | null,
+};
+
+export type UpdateSessionMutationVariables = {
+  input: UpdateSessionInput,
+  condition?: ModelSessionConditionInput | null,
+};
+
+export type UpdateSessionMutation = {
+  updateSession?:  {
+    __typename: "Session",
+    id: string,
+    userId?: string | null,
+    cartItems?:  {
+      __typename: "ModelCartItemConnection",
+      nextToken?: string | null,
+    } | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      userId: string,
+      username: string,
+      firstName?: string | null,
+      lastName?: string | null,
+      isArchived?: boolean | null,
+      createdAt: string,
+      updatedAt: string,
+      owner?: string | null,
+    } | null,
+    deletedAt?: string | null,
+    createdAt: string,
+    updatedAt: string,
+    userSessionsId?: string | null,
+  } | null,
+};
+
+export type DeleteSessionMutationVariables = {
+  input: DeleteSessionInput,
+  condition?: ModelSessionConditionInput | null,
+};
+
+export type DeleteSessionMutation = {
+  deleteSession?:  {
+    __typename: "Session",
+    id: string,
+    userId?: string | null,
+    cartItems?:  {
+      __typename: "ModelCartItemConnection",
+      nextToken?: string | null,
+    } | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      userId: string,
+      username: string,
+      firstName?: string | null,
+      lastName?: string | null,
+      isArchived?: boolean | null,
+      createdAt: string,
+      updatedAt: string,
+      owner?: string | null,
+    } | null,
+    deletedAt?: string | null,
+    createdAt: string,
+    updatedAt: string,
+    userSessionsId?: string | null,
+  } | null,
 };
 
 export type CreateProductMutationVariables = {
@@ -1164,108 +1262,6 @@ export type DeleteUserMutation = {
   } | null,
 };
 
-export type CreateSessionMutationVariables = {
-  input: CreateSessionInput,
-  condition?: ModelSessionConditionInput | null,
-};
-
-export type CreateSessionMutation = {
-  createSession?:  {
-    __typename: "Session",
-    id: string,
-    userId?: string | null,
-    sessionId: string,
-    cartItems?:  {
-      __typename: "ModelCartItemConnection",
-      nextToken?: string | null,
-    } | null,
-    user?:  {
-      __typename: "User",
-      id: string,
-      userId: string,
-      username: string,
-      firstName?: string | null,
-      lastName?: string | null,
-      isArchived?: boolean | null,
-      createdAt: string,
-      updatedAt: string,
-      owner?: string | null,
-    } | null,
-    createdAt: string,
-    updatedAt: string,
-    userSessionsId?: string | null,
-    owner?: string | null,
-  } | null,
-};
-
-export type UpdateSessionMutationVariables = {
-  input: UpdateSessionInput,
-  condition?: ModelSessionConditionInput | null,
-};
-
-export type UpdateSessionMutation = {
-  updateSession?:  {
-    __typename: "Session",
-    id: string,
-    userId?: string | null,
-    sessionId: string,
-    cartItems?:  {
-      __typename: "ModelCartItemConnection",
-      nextToken?: string | null,
-    } | null,
-    user?:  {
-      __typename: "User",
-      id: string,
-      userId: string,
-      username: string,
-      firstName?: string | null,
-      lastName?: string | null,
-      isArchived?: boolean | null,
-      createdAt: string,
-      updatedAt: string,
-      owner?: string | null,
-    } | null,
-    createdAt: string,
-    updatedAt: string,
-    userSessionsId?: string | null,
-    owner?: string | null,
-  } | null,
-};
-
-export type DeleteSessionMutationVariables = {
-  input: DeleteSessionInput,
-  condition?: ModelSessionConditionInput | null,
-};
-
-export type DeleteSessionMutation = {
-  deleteSession?:  {
-    __typename: "Session",
-    id: string,
-    userId?: string | null,
-    sessionId: string,
-    cartItems?:  {
-      __typename: "ModelCartItemConnection",
-      nextToken?: string | null,
-    } | null,
-    user?:  {
-      __typename: "User",
-      id: string,
-      userId: string,
-      username: string,
-      firstName?: string | null,
-      lastName?: string | null,
-      isArchived?: boolean | null,
-      createdAt: string,
-      updatedAt: string,
-      owner?: string | null,
-    } | null,
-    createdAt: string,
-    updatedAt: string,
-    userSessionsId?: string | null,
-    owner?: string | null,
-  } | null,
-};
-
 export type CreateCartItemMutationVariables = {
   input: CreateCartItemInput,
   condition?: ModelCartItemConditionInput | null,
@@ -1282,11 +1278,10 @@ export type CreateCartItemMutation = {
       __typename: "Session",
       id: string,
       userId?: string | null,
-      sessionId: string,
+      deletedAt?: string | null,
       createdAt: string,
       updatedAt: string,
       userSessionsId?: string | null,
-      owner?: string | null,
     } | null,
     product?:  {
       __typename: "Product",
@@ -1325,11 +1320,10 @@ export type UpdateCartItemMutation = {
       __typename: "Session",
       id: string,
       userId?: string | null,
-      sessionId: string,
+      deletedAt?: string | null,
       createdAt: string,
       updatedAt: string,
       userSessionsId?: string | null,
-      owner?: string | null,
     } | null,
     product?:  {
       __typename: "Product",
@@ -1368,11 +1362,10 @@ export type DeleteCartItemMutation = {
       __typename: "Session",
       id: string,
       userId?: string | null,
-      sessionId: string,
+      deletedAt?: string | null,
       createdAt: string,
       updatedAt: string,
       userSessionsId?: string | null,
-      owner?: string | null,
     } | null,
     product?:  {
       __typename: "Product",
@@ -1638,6 +1631,60 @@ export type DeleteOrderItemMutation = {
   } | null,
 };
 
+export type GetSessionQueryVariables = {
+  id: string,
+};
+
+export type GetSessionQuery = {
+  getSession?:  {
+    __typename: "Session",
+    id: string,
+    userId?: string | null,
+    cartItems?:  {
+      __typename: "ModelCartItemConnection",
+      nextToken?: string | null,
+    } | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      userId: string,
+      username: string,
+      firstName?: string | null,
+      lastName?: string | null,
+      isArchived?: boolean | null,
+      createdAt: string,
+      updatedAt: string,
+      owner?: string | null,
+    } | null,
+    deletedAt?: string | null,
+    createdAt: string,
+    updatedAt: string,
+    userSessionsId?: string | null,
+  } | null,
+};
+
+export type ListSessionsQueryVariables = {
+  filter?: ModelSessionFilterInput | null,
+  limit?: number | null,
+  nextToken?: string | null,
+};
+
+export type ListSessionsQuery = {
+  listSessions?:  {
+    __typename: "ModelSessionConnection",
+    items:  Array< {
+      __typename: "Session",
+      id: string,
+      userId?: string | null,
+      deletedAt?: string | null,
+      createdAt: string,
+      updatedAt: string,
+      userSessionsId?: string | null,
+    } | null >,
+    nextToken?: string | null,
+  } | null,
+};
+
 export type GetProductQueryVariables = {
   id: string,
 };
@@ -1824,62 +1871,6 @@ export type ListUsersQuery = {
   } | null,
 };
 
-export type GetSessionQueryVariables = {
-  id: string,
-};
-
-export type GetSessionQuery = {
-  getSession?:  {
-    __typename: "Session",
-    id: string,
-    userId?: string | null,
-    sessionId: string,
-    cartItems?:  {
-      __typename: "ModelCartItemConnection",
-      nextToken?: string | null,
-    } | null,
-    user?:  {
-      __typename: "User",
-      id: string,
-      userId: string,
-      username: string,
-      firstName?: string | null,
-      lastName?: string | null,
-      isArchived?: boolean | null,
-      createdAt: string,
-      updatedAt: string,
-      owner?: string | null,
-    } | null,
-    createdAt: string,
-    updatedAt: string,
-    userSessionsId?: string | null,
-    owner?: string | null,
-  } | null,
-};
-
-export type ListSessionsQueryVariables = {
-  filter?: ModelSessionFilterInput | null,
-  limit?: number | null,
-  nextToken?: string | null,
-};
-
-export type ListSessionsQuery = {
-  listSessions?:  {
-    __typename: "ModelSessionConnection",
-    items:  Array< {
-      __typename: "Session",
-      id: string,
-      userId?: string | null,
-      sessionId: string,
-      createdAt: string,
-      updatedAt: string,
-      userSessionsId?: string | null,
-      owner?: string | null,
-    } | null >,
-    nextToken?: string | null,
-  } | null,
-};
-
 export type GetCartItemQueryVariables = {
   id: string,
 };
@@ -1895,11 +1886,10 @@ export type GetCartItemQuery = {
       __typename: "Session",
       id: string,
       userId?: string | null,
-      sessionId: string,
+      deletedAt?: string | null,
       createdAt: string,
       updatedAt: string,
       userSessionsId?: string | null,
-      owner?: string | null,
     } | null,
     product?:  {
       __typename: "Product",
@@ -2072,6 +2062,102 @@ export type ListOrderItemsQuery = {
       owner?: string | null,
     } | null >,
     nextToken?: string | null,
+  } | null,
+};
+
+export type OnCreateSessionSubscriptionVariables = {
+  filter?: ModelSubscriptionSessionFilterInput | null,
+};
+
+export type OnCreateSessionSubscription = {
+  onCreateSession?:  {
+    __typename: "Session",
+    id: string,
+    userId?: string | null,
+    cartItems?:  {
+      __typename: "ModelCartItemConnection",
+      nextToken?: string | null,
+    } | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      userId: string,
+      username: string,
+      firstName?: string | null,
+      lastName?: string | null,
+      isArchived?: boolean | null,
+      createdAt: string,
+      updatedAt: string,
+      owner?: string | null,
+    } | null,
+    deletedAt?: string | null,
+    createdAt: string,
+    updatedAt: string,
+    userSessionsId?: string | null,
+  } | null,
+};
+
+export type OnUpdateSessionSubscriptionVariables = {
+  filter?: ModelSubscriptionSessionFilterInput | null,
+};
+
+export type OnUpdateSessionSubscription = {
+  onUpdateSession?:  {
+    __typename: "Session",
+    id: string,
+    userId?: string | null,
+    cartItems?:  {
+      __typename: "ModelCartItemConnection",
+      nextToken?: string | null,
+    } | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      userId: string,
+      username: string,
+      firstName?: string | null,
+      lastName?: string | null,
+      isArchived?: boolean | null,
+      createdAt: string,
+      updatedAt: string,
+      owner?: string | null,
+    } | null,
+    deletedAt?: string | null,
+    createdAt: string,
+    updatedAt: string,
+    userSessionsId?: string | null,
+  } | null,
+};
+
+export type OnDeleteSessionSubscriptionVariables = {
+  filter?: ModelSubscriptionSessionFilterInput | null,
+};
+
+export type OnDeleteSessionSubscription = {
+  onDeleteSession?:  {
+    __typename: "Session",
+    id: string,
+    userId?: string | null,
+    cartItems?:  {
+      __typename: "ModelCartItemConnection",
+      nextToken?: string | null,
+    } | null,
+    user?:  {
+      __typename: "User",
+      id: string,
+      userId: string,
+      username: string,
+      firstName?: string | null,
+      lastName?: string | null,
+      isArchived?: boolean | null,
+      createdAt: string,
+      updatedAt: string,
+      owner?: string | null,
+    } | null,
+    deletedAt?: string | null,
+    createdAt: string,
+    updatedAt: string,
+    userSessionsId?: string | null,
   } | null,
 };
 
@@ -2411,108 +2497,6 @@ export type OnDeleteUserSubscription = {
   } | null,
 };
 
-export type OnCreateSessionSubscriptionVariables = {
-  filter?: ModelSubscriptionSessionFilterInput | null,
-  owner?: string | null,
-};
-
-export type OnCreateSessionSubscription = {
-  onCreateSession?:  {
-    __typename: "Session",
-    id: string,
-    userId?: string | null,
-    sessionId: string,
-    cartItems?:  {
-      __typename: "ModelCartItemConnection",
-      nextToken?: string | null,
-    } | null,
-    user?:  {
-      __typename: "User",
-      id: string,
-      userId: string,
-      username: string,
-      firstName?: string | null,
-      lastName?: string | null,
-      isArchived?: boolean | null,
-      createdAt: string,
-      updatedAt: string,
-      owner?: string | null,
-    } | null,
-    createdAt: string,
-    updatedAt: string,
-    userSessionsId?: string | null,
-    owner?: string | null,
-  } | null,
-};
-
-export type OnUpdateSessionSubscriptionVariables = {
-  filter?: ModelSubscriptionSessionFilterInput | null,
-  owner?: string | null,
-};
-
-export type OnUpdateSessionSubscription = {
-  onUpdateSession?:  {
-    __typename: "Session",
-    id: string,
-    userId?: string | null,
-    sessionId: string,
-    cartItems?:  {
-      __typename: "ModelCartItemConnection",
-      nextToken?: string | null,
-    } | null,
-    user?:  {
-      __typename: "User",
-      id: string,
-      userId: string,
-      username: string,
-      firstName?: string | null,
-      lastName?: string | null,
-      isArchived?: boolean | null,
-      createdAt: string,
-      updatedAt: string,
-      owner?: string | null,
-    } | null,
-    createdAt: string,
-    updatedAt: string,
-    userSessionsId?: string | null,
-    owner?: string | null,
-  } | null,
-};
-
-export type OnDeleteSessionSubscriptionVariables = {
-  filter?: ModelSubscriptionSessionFilterInput | null,
-  owner?: string | null,
-};
-
-export type OnDeleteSessionSubscription = {
-  onDeleteSession?:  {
-    __typename: "Session",
-    id: string,
-    userId?: string | null,
-    sessionId: string,
-    cartItems?:  {
-      __typename: "ModelCartItemConnection",
-      nextToken?: string | null,
-    } | null,
-    user?:  {
-      __typename: "User",
-      id: string,
-      userId: string,
-      username: string,
-      firstName?: string | null,
-      lastName?: string | null,
-      isArchived?: boolean | null,
-      createdAt: string,
-      updatedAt: string,
-      owner?: string | null,
-    } | null,
-    createdAt: string,
-    updatedAt: string,
-    userSessionsId?: string | null,
-    owner?: string | null,
-  } | null,
-};
-
 export type OnCreateCartItemSubscriptionVariables = {
   filter?: ModelSubscriptionCartItemFilterInput | null,
 };
@@ -2528,11 +2512,10 @@ export type OnCreateCartItemSubscription = {
       __typename: "Session",
       id: string,
       userId?: string | null,
-      sessionId: string,
+      deletedAt?: string | null,
       createdAt: string,
       updatedAt: string,
       userSessionsId?: string | null,
-      owner?: string | null,
     } | null,
     product?:  {
       __typename: "Product",
@@ -2570,11 +2553,10 @@ export type OnUpdateCartItemSubscription = {
       __typename: "Session",
       id: string,
       userId?: string | null,
-      sessionId: string,
+      deletedAt?: string | null,
       createdAt: string,
       updatedAt: string,
       userSessionsId?: string | null,
-      owner?: string | null,
     } | null,
     product?:  {
       __typename: "Product",
@@ -2612,11 +2594,10 @@ export type OnDeleteCartItemSubscription = {
       __typename: "Session",
       id: string,
       userId?: string | null,
-      sessionId: string,
+      deletedAt?: string | null,
       createdAt: string,
       updatedAt: string,
       userSessionsId?: string | null,
-      owner?: string | null,
     } | null,
     product?:  {
       __typename: "Product",

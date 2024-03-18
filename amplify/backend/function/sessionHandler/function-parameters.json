@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "api": {
+      "mytutorialv2": [
+        "Query",
+        "Mutation"
+      ]
+    }
+  },
+  "lambdaLayers": [],
+  "environmentVariableList": [
+    {
+      "cloudFormationParameterName": "tablename",
+      "environmentVariableName": "TABLENAME"
+    },
+    {
+      "cloudFormationParameterName": "awsAmplifyId",
+      "environmentVariableName": "AWS_AMPLIFY_ID"
+    }
+  ]
+}

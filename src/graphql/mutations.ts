@@ -15,6 +15,108 @@ export const processOrder = /* GraphQL */ `mutation ProcessOrder($input: Process
   APITypes.ProcessOrderMutationVariables,
   APITypes.ProcessOrderMutation
 >;
+export const createSession = /* GraphQL */ `mutation CreateSession(
+  $input: CreateSessionInput!
+  $condition: ModelSessionConditionInput
+) {
+  createSession(input: $input, condition: $condition) {
+    id
+    userId
+    cartItems {
+      nextToken
+      __typename
+    }
+    user {
+      id
+      userId
+      username
+      firstName
+      lastName
+      isArchived
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    deletedAt
+    createdAt
+    updatedAt
+    userSessionsId
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.CreateSessionMutationVariables,
+  APITypes.CreateSessionMutation
+>;
+export const updateSession = /* GraphQL */ `mutation UpdateSession(
+  $input: UpdateSessionInput!
+  $condition: ModelSessionConditionInput
+) {
+  updateSession(input: $input, condition: $condition) {
+    id
+    userId
+    cartItems {
+      nextToken
+      __typename
+    }
+    user {
+      id
+      userId
+      username
+      firstName
+      lastName
+      isArchived
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    deletedAt
+    createdAt
+    updatedAt
+    userSessionsId
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.UpdateSessionMutationVariables,
+  APITypes.UpdateSessionMutation
+>;
+export const deleteSession = /* GraphQL */ `mutation DeleteSession(
+  $input: DeleteSessionInput!
+  $condition: ModelSessionConditionInput
+) {
+  deleteSession(input: $input, condition: $condition) {
+    id
+    userId
+    cartItems {
+      nextToken
+      __typename
+    }
+    user {
+      id
+      userId
+      username
+      firstName
+      lastName
+      isArchived
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    deletedAt
+    createdAt
+    updatedAt
+    userSessionsId
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.DeleteSessionMutationVariables,
+  APITypes.DeleteSessionMutation
+>;
 export const createProduct = /* GraphQL */ `mutation CreateProduct(
   $input: CreateProductInput!
   $condition: ModelProductConditionInput
@@ -360,111 +462,6 @@ export const deleteUser = /* GraphQL */ `mutation DeleteUser(
   APITypes.DeleteUserMutationVariables,
   APITypes.DeleteUserMutation
 >;
-export const createSession = /* GraphQL */ `mutation CreateSession(
-  $input: CreateSessionInput!
-  $condition: ModelSessionConditionInput
-) {
-  createSession(input: $input, condition: $condition) {
-    id
-    userId
-    sessionId
-    cartItems {
-      nextToken
-      __typename
-    }
-    user {
-      id
-      userId
-      username
-      firstName
-      lastName
-      isArchived
-      createdAt
-      updatedAt
-      owner
-      __typename
-    }
-    createdAt
-    updatedAt
-    userSessionsId
-    owner
-    __typename
-  }
-}
-` as GeneratedMutation<
-  APITypes.CreateSessionMutationVariables,
-  APITypes.CreateSessionMutation
->;
-export const updateSession = /* GraphQL */ `mutation UpdateSession(
-  $input: UpdateSessionInput!
-  $condition: ModelSessionConditionInput
-) {
-  updateSession(input: $input, condition: $condition) {
-    id
-    userId
-    sessionId
-    cartItems {
-      nextToken
-      __typename
-    }
-    user {
-      id
-      userId
-      username
-      firstName
-      lastName
-      isArchived
-      createdAt
-      updatedAt
-      owner
-      __typename
-    }
-    createdAt
-    updatedAt
-    userSessionsId
-    owner
-    __typename
-  }
-}
-` as GeneratedMutation<
-  APITypes.UpdateSessionMutationVariables,
-  APITypes.UpdateSessionMutation
->;
-export const deleteSession = /* GraphQL */ `mutation DeleteSession(
-  $input: DeleteSessionInput!
-  $condition: ModelSessionConditionInput
-) {
-  deleteSession(input: $input, condition: $condition) {
-    id
-    userId
-    sessionId
-    cartItems {
-      nextToken
-      __typename
-    }
-    user {
-      id
-      userId
-      username
-      firstName
-      lastName
-      isArchived
-      createdAt
-      updatedAt
-      owner
-      __typename
-    }
-    createdAt
-    updatedAt
-    userSessionsId
-    owner
-    __typename
-  }
-}
-` as GeneratedMutation<
-  APITypes.DeleteSessionMutationVariables,
-  APITypes.DeleteSessionMutation
->;
 export const createCartItem = /* GraphQL */ `mutation CreateCartItem(
   $input: CreateCartItemInput!
   $condition: ModelCartItemConditionInput
@@ -477,11 +474,10 @@ export const createCartItem = /* GraphQL */ `mutation CreateCartItem(
     session {
       id
       userId
-      sessionId
+      deletedAt
       createdAt
       updatedAt
       userSessionsId
-      owner
       __typename
     }
     product {
@@ -521,11 +517,10 @@ export const updateCartItem = /* GraphQL */ `mutation UpdateCartItem(
     session {
       id
       userId
-      sessionId
+      deletedAt
       createdAt
       updatedAt
       userSessionsId
-      owner
       __typename
     }
     product {
@@ -565,11 +560,10 @@ export const deleteCartItem = /* GraphQL */ `mutation DeleteCartItem(
     session {
       id
       userId
-      sessionId
+      deletedAt
       createdAt
       updatedAt
       userSessionsId
-      owner
       __typename
     }
     product {

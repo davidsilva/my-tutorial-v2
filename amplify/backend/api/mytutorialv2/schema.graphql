@@ -76,29 +76,12 @@ type User
   orders: [Order] @hasMany
 }
 
-type Session
-  @model
-  @auth(
-    rules: [
-      { allow: owner, operations: [read, create, update] }
-      {
-        allow: private
-        provider: userPools
-        operations: [read, create, update]
-      }
-      { allow: public, provider: iam, operations: [read, create, update] }
-      {
-        allow: groups
-        groups: ["adminUsers"]
-        operations: [read, create, update]
-      }
-    ]
-  ) {
+type Session @model {
   id: ID!
   userId: ID
-  sessionId: String!
   cartItems: [CartItem] @hasMany
   user: User @belongsTo(fields: ["userId"])
+  deletedAt: AWSDateTime
 }
 
 type CartItem

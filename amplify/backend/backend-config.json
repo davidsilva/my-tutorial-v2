@@ -28,6 +28,20 @@
       "providerPlugin": "awscloudformation",
       "service": "API Gateway"
     },
+    "SessionAPI": {
+      "dependsOn": [
+        {
+          "attributes": [
+            "Name",
+            "Arn"
+          ],
+          "category": "function",
+          "resourceName": "sessionHandler"
+        }
+      ],
+      "providerPlugin": "awscloudformation",
+      "service": "API Gateway"
+    },
     "mytutorialv2": {
       "dependsOn": [
         {
@@ -149,6 +163,21 @@
       "build": true,
       "providerPlugin": "awscloudformation",
       "service": "Lambda"
+    },
+    "sessionHandler": {
+      "build": true,
+      "dependsOn": [
+        {
+          "attributes": [
+            "GraphQLAPIIdOutput",
+            "GraphQLAPIEndpointOutput"
+          ],
+          "category": "api",
+          "resourceName": "mytutorialv2"
+        }
+      ],
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
     }
   },
   "parameters": {
@@ -229,6 +258,38 @@
         {
           "category": "function",
           "resourceName": "processPayment"
+        }
+      ]
+    },
+    "AMPLIFY_function_sessionHandler_awsAmplifyId": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "sessionHandler"
+        }
+      ]
+    },
+    "AMPLIFY_function_sessionHandler_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "sessionHandler"
+        }
+      ]
+    },
+    "AMPLIFY_function_sessionHandler_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "sessionHandler"
+        }
+      ]
+    },
+    "AMPLIFY_function_sessionHandler_tablename": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "sessionHandler"
         }
       ]
     }

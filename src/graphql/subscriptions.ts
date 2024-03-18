@@ -8,6 +8,99 @@ type GeneratedSubscription<InputType, OutputType> = string & {
   __generatedSubscriptionOutput: OutputType;
 };
 
+export const onCreateSession = /* GraphQL */ `subscription OnCreateSession($filter: ModelSubscriptionSessionFilterInput) {
+  onCreateSession(filter: $filter) {
+    id
+    userId
+    cartItems {
+      nextToken
+      __typename
+    }
+    user {
+      id
+      userId
+      username
+      firstName
+      lastName
+      isArchived
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    deletedAt
+    createdAt
+    updatedAt
+    userSessionsId
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnCreateSessionSubscriptionVariables,
+  APITypes.OnCreateSessionSubscription
+>;
+export const onUpdateSession = /* GraphQL */ `subscription OnUpdateSession($filter: ModelSubscriptionSessionFilterInput) {
+  onUpdateSession(filter: $filter) {
+    id
+    userId
+    cartItems {
+      nextToken
+      __typename
+    }
+    user {
+      id
+      userId
+      username
+      firstName
+      lastName
+      isArchived
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    deletedAt
+    createdAt
+    updatedAt
+    userSessionsId
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnUpdateSessionSubscriptionVariables,
+  APITypes.OnUpdateSessionSubscription
+>;
+export const onDeleteSession = /* GraphQL */ `subscription OnDeleteSession($filter: ModelSubscriptionSessionFilterInput) {
+  onDeleteSession(filter: $filter) {
+    id
+    userId
+    cartItems {
+      nextToken
+      __typename
+    }
+    user {
+      id
+      userId
+      username
+      firstName
+      lastName
+      isArchived
+      createdAt
+      updatedAt
+      owner
+      __typename
+    }
+    deletedAt
+    createdAt
+    updatedAt
+    userSessionsId
+    __typename
+  }
+}
+` as GeneratedSubscription<
+  APITypes.OnDeleteSessionSubscriptionVariables,
+  APITypes.OnDeleteSessionSubscription
+>;
 export const onCreateProduct = /* GraphQL */ `subscription OnCreateProduct(
   $filter: ModelSubscriptionProductFilterInput
   $owner: String
@@ -353,111 +446,6 @@ export const onDeleteUser = /* GraphQL */ `subscription OnDeleteUser(
   APITypes.OnDeleteUserSubscriptionVariables,
   APITypes.OnDeleteUserSubscription
 >;
-export const onCreateSession = /* GraphQL */ `subscription OnCreateSession(
-  $filter: ModelSubscriptionSessionFilterInput
-  $owner: String
-) {
-  onCreateSession(filter: $filter, owner: $owner) {
-    id
-    userId
-    sessionId
-    cartItems {
-      nextToken
-      __typename
-    }
-    user {
-      id
-      userId
-      username
-      firstName
-      lastName
-      isArchived
-      createdAt
-      updatedAt
-      owner
-      __typename
-    }
-    createdAt
-    updatedAt
-    userSessionsId
-    owner
-    __typename
-  }
-}
-` as GeneratedSubscription<
-  APITypes.OnCreateSessionSubscriptionVariables,
-  APITypes.OnCreateSessionSubscription
->;
-export const onUpdateSession = /* GraphQL */ `subscription OnUpdateSession(
-  $filter: ModelSubscriptionSessionFilterInput
-  $owner: String
-) {
-  onUpdateSession(filter: $filter, owner: $owner) {
-    id
-    userId
-    sessionId
-    cartItems {
-      nextToken
-      __typename
-    }
-    user {
-      id
-      userId
-      username
-      firstName
-      lastName
-      isArchived
-      createdAt
-      updatedAt
-      owner
-      __typename
-    }
-    createdAt
-    updatedAt
-    userSessionsId
-    owner
-    __typename
-  }
-}
-` as GeneratedSubscription<
-  APITypes.OnUpdateSessionSubscriptionVariables,
-  APITypes.OnUpdateSessionSubscription
->;
-export const onDeleteSession = /* GraphQL */ `subscription OnDeleteSession(
-  $filter: ModelSubscriptionSessionFilterInput
-  $owner: String
-) {
-  onDeleteSession(filter: $filter, owner: $owner) {
-    id
-    userId
-    sessionId
-    cartItems {
-      nextToken
-      __typename
-    }
-    user {
-      id
-      userId
-      username
-      firstName
-      lastName
-      isArchived
-      createdAt
-      updatedAt
-      owner
-      __typename
-    }
-    createdAt
-    updatedAt
-    userSessionsId
-    owner
-    __typename
-  }
-}
-` as GeneratedSubscription<
-  APITypes.OnDeleteSessionSubscriptionVariables,
-  APITypes.OnDeleteSessionSubscription
->;
 export const onCreateCartItem = /* GraphQL */ `subscription OnCreateCartItem($filter: ModelSubscriptionCartItemFilterInput) {
   onCreateCartItem(filter: $filter) {
     id
@@ -467,11 +455,10 @@ export const onCreateCartItem = /* GraphQL */ `subscription OnCreateCartItem($fi
     session {
       id
       userId
-      sessionId
+      deletedAt
       createdAt
       updatedAt
       userSessionsId
-      owner
       __typename
     }
     product {
@@ -508,11 +495,10 @@ export const onUpdateCartItem = /* GraphQL */ `subscription OnUpdateCartItem($fi
     session {
       id
       userId
-      sessionId
+      deletedAt
       createdAt
       updatedAt
       userSessionsId
-      owner
       __typename
     }
     product {
@@ -549,11 +535,10 @@ export const onDeleteCartItem = /* GraphQL */ `subscription OnDeleteCartItem($fi
     session {
       id
       userId
-      sessionId
+      deletedAt
       createdAt
       updatedAt
       userSessionsId
-      owner
       __typename
     }
     product {
