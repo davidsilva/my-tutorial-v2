@@ -10,6 +10,7 @@ import {
   DynamoDBClient,
   PutItemCommand,
   GetItemCommand,
+  UpdateItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 import { v4 as uuidv4 } from "uuid";
@@ -106,13 +107,23 @@ async function updateSession(sessionId, userId) {
 
   const params = {
     TableName: tableName,
-    Item: marshall({ id: sessionId, userId: userId, updatedAt: updatedAt }),
+    Key: marshall({ id: sessionId }),
+    UpdateExpression: "SET #userId = :userId, #updatedAt = :updatedAt",
+    ExpressionAttributeNames: {
+      "#userId": "userId",
+      "#updatedAt": "updatedAt",
+    },
+    ExpressionAttributeValues: marshall({
+      ":userId": userId ? userId : null,
+      ":updatedAt": updatedAt,
+    }),
+    ReturnValues: "ALL_NEW",
   };
 
-  const putItemCommand = new PutItemCommand(params);
+  const updateItemCommand = new UpdateItemCommand(params);
 
   try {
-    await ddbClient.send(putItemCommand);
+    await ddbClient.send(updateItemCommand);
     return {
       statusCode: 200,
       //  Uncomment below to enable CORS requests
@@ -148,9 +159,17 @@ export async function handler(event) {
     ? event.pathParameters.sessionId
     : null;
 
-  const userId = event.queryStringParameters.userId;
+  const userId = event.queryStringParameters
+    ? event.queryStringParameters.userId
+    : null;
 
-  switch (event.requestContext.http.method) {
+  const httpMethod =
+    event.httpMethod ||
+    (event.requestContext &&
+      event.requestContext.http &&
+      event.requestContext.http.method);
+
+  switch (httpMethod) {
     case "POST":
       return createSession(userId);
     case "GET":
