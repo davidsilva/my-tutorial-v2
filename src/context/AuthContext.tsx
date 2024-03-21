@@ -2,8 +2,8 @@ import React, {
   useState,
   useContext,
   createContext,
-  useCallback,
   useEffect,
+  useRef,
 } from "react";
 import {
   signUp as awsSignUp,
@@ -21,6 +21,10 @@ import {
 } from "aws-amplify/auth";
 import { NavigateFunction } from "react-router-dom";
 import { toast } from "react-toastify";
+import useIsAdmin from "../hooks/useIsAdmin";
+import useLocalStorageSessionId from "../hooks/useLocalStorageSessionId";
+import useSession from "../hooks/useSession";
+import useCheckForUser from "../hooks/useCheckForUser";
 
 type AuthContextProviderProps = {
   children: React.ReactNode;
@@ -33,13 +37,17 @@ type SignUpType = {
   email: string;
 };
 
-export type AuthContextType = {
+export type AuthStateType = {
   isLoggedIn: boolean;
-  signInStep: string;
-  setSignInStep: React.Dispatch<React.SetStateAction<string>>;
   isAdmin: boolean;
   user: AuthUser | null;
-  checkUser: () => Promise<void>;
+  sessionId: string | null | undefined;
+  isAuthStateKnown: boolean;
+};
+
+export type AuthContextType = {
+  signInStep: string;
+  setSignInStep: React.Dispatch<React.SetStateAction<string>>;
   signIn: (values: SignInInput, navigate: NavigateFunction) => Promise<void>;
   signOut: (navigate: NavigateFunction) => Promise<void>;
   signUp: (values: SignUpType, navigate: NavigateFunction) => Promise<void>;
@@ -54,17 +62,14 @@ export type AuthContextType = {
   resetAuthState: () => void;
   intendedPath?: string | null;
   setIntendedPath: React.Dispatch<React.SetStateAction<string | null>>;
+  authState: AuthStateType | null;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 const defaultAuthState = {
-  isLoggedIn: false,
   signInStep: "",
   setSignInStep: () => {},
-  isAdmin: false,
-  user: null,
-  checkUser: async () => {},
   signIn: async () => {},
   signOut: async () => {},
   signUp: async () => {},
@@ -73,6 +78,7 @@ const defaultAuthState = {
   resetAuthState: () => {},
   intendedPath: null,
   setIntendedPath: () => {},
+  authState: null,
 };
 
 export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
@@ -80,45 +86,75 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   initialAuthState,
 }) => {
   const defaultState = initialAuthState || defaultAuthState;
-  const [user, setUser] = useState<AuthUser | null>(defaultState.user);
   const [signInStep, setSignInStep] = useState(defaultState.signInStep);
-  const [isLoggedIn, setIsLoggedIn] = useState(
-    initialAuthState?.isLoggedIn !== undefined
-      ? initialAuthState.isLoggedIn
-      : localStorage.getItem("isLoggedIn") === "true"
-  );
-  const [isAdmin, setIsAdmin] = useState(defaultState.isAdmin);
   const [intendedPath, setIntendedPath] = useState<string | null>(
     defaultState.intendedPath || null
   );
-
-  const checkUser = useCallback(async () => {
-    try {
-      const currentUser = await getCurrentUser();
-      console.log("currentUser", currentUser);
-      setIsLoggedIn(true);
-      localStorage.setItem("isLoggedIn", "true");
-      setUser(currentUser);
-
-      const isAdmin = await checkIsAdmin();
-      setIsAdmin(isAdmin);
-    } catch (err) {
-      console.error(err);
-      setIsLoggedIn(false);
-      localStorage.removeItem("isLoggedIn");
-      setUser(null);
-      setIsAdmin(false);
-    }
-  }, []);
+  const [authState, setAuthState] = useState<AuthStateType>({
+    isLoggedIn: false,
+    isAdmin: false,
+    user: null,
+    sessionId: null,
+    isAuthStateKnown: false,
+  });
+  const {
+    isAdmin,
+    isLoading: isAdminCheckLoading,
+    checkIsAdmin,
+  } = useIsAdmin();
+  const {
+    isLoggedIn,
+    isLoading: isUserCheckLoading,
+    user,
+    checkUser,
+  } = useCheckForUser();
+  const localStorageSessionId = localStorage.getItem("sessionId");
+  const {
+    session,
+    createSession,
+    updateSession,
+    deleteSession,
+    isLoading: isSessionLoading,
+    getSession,
+  } = useSession();
 
   useEffect(() => {
-    checkUser();
-  }, [checkUser]);
+    if (!isUserCheckLoading && !isSessionLoading && !isAdminCheckLoading) {
+      console.log("user, admin, and session check complete");
+      console.log("user", user);
+      console.log("session", session);
+      console.log("isAdmin", isAdmin);
+
+      // If we have a session, sessionId in authState should be set.
+      // Likewise, with user.
+      setAuthState((prevState) => ({
+        ...prevState,
+        isLoggedIn: isLoggedIn,
+        isAdmin: isAdmin,
+        user: user,
+        sessionId: session ? session.id : null,
+        isAuthStateKnown: true,
+      }));
+    }
+  }, [
+    isUserCheckLoading,
+    isSessionLoading,
+    isAdminCheckLoading,
+    isLoggedIn,
+    isAdmin,
+    session,
+    user,
+  ]);
 
   const resetAuthState = () => {
     setSignInStep(defaultState.signInStep);
-    setIsLoggedIn(defaultState.isLoggedIn);
-    setIsAdmin(defaultState.isAdmin);
+    setAuthState({
+      isLoggedIn: false,
+      isAdmin: false,
+      user: null,
+      sessionId: null,
+      isAuthStateKnown: false,
+    });
     localStorage.removeItem("isLoggedIn");
   };
 
@@ -127,22 +163,19 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
 
     try {
       const result = await awsSignIn({ username, password });
+      console.log("result", result);
       const isSignedIn = result.isSignedIn;
       const nextStep = result.nextStep;
 
       setSignInStep(nextStep.signInStep);
-      setIsLoggedIn(isSignedIn);
-      if (isSignedIn) {
-        localStorage.setItem("isLoggedIn", "true");
-        const isAdmin = await checkIsAdmin();
-        setIsAdmin(isAdmin);
-
-        await checkUser();
-      } else {
-        localStorage.setItem("isLoggedIn", "false");
-      }
+      setAuthState((prevState) => ({
+        ...prevState,
+        isLoggedIn: isSignedIn,
+      }));
 
       if (nextStep.signInStep === "DONE") {
+        await checkUser();
+        await checkIsAdmin();
         toast.success("Sign in complete!");
         navigate(intendedPath || "/");
         setIntendedPath(null);
@@ -155,7 +188,11 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     } catch (error) {
       // NotAuthorizedException: Incorrect username or password.
       const authError = error as AuthError;
-      setIsLoggedIn(false);
+      // setIsLoggedIn(false);
+      setAuthState((prevState) => ({
+        ...prevState,
+        isLoggedIn: false,
+      }));
       toast.error(`There was a problem signing you in: ${authError.message}`);
       console.error("error signing in", error);
     }
@@ -172,19 +209,27 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
         challengeResponse: challengeResponse,
       });
 
-      setIsLoggedIn(isSignedIn);
+      // setIsLoggedIn(isSignedIn);
+      setAuthState((prevState) => ({
+        ...prevState,
+        isLoggedIn: isSignedIn,
+      }));
       setSignInStep(nextStep.signInStep);
-      if (isSignedIn) {
-        localStorage.setItem("isLoggedIn", "true");
-        const isAdmin = await checkIsAdmin();
-        setIsAdmin(isAdmin);
-      }
+      // if (isSignedIn) {
+      //   localStorage.setItem("isLoggedIn", "true");
+      //   const isAdmin = await checkIsAdmin();
+      //   setIsAdmin(isAdmin);
+      // }
       if (nextStep.signInStep === "DONE") {
         navigate("/");
       }
     } catch (error) {
       const authError = error as AuthError;
-      setIsLoggedIn(false);
+      // setIsLoggedIn(false);
+      setAuthState((prevState) => ({
+        ...prevState,
+        isLoggedIn: false,
+      }));
       toast.error(
         `There was a problem confirming your sign in: ${authError.message}`
       );
@@ -193,14 +238,27 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   };
 
   const signOut = async (navigate: NavigateFunction) => {
+    // Mark session as ended or "should delete"?
     try {
       await awsSignOut();
-      setIsLoggedIn(false);
-      setIsAdmin(false);
+      setAuthState((prevState) => ({
+        ...prevState,
+        isLoggedIn: false,
+        isAdmin: false,
+        user: null,
+        sessionId: null,
+      }));
+
+      // assume if user signs out, they really don't want session
+      // persisting in browser. So remove it.
+      console.log("removing session");
+      localStorage.removeItem("sessionId");
       localStorage.removeItem("isLoggedIn");
+      // setIsAdmin(false);
+      // localStorage.removeItem("isLoggedIn");
       navigate("/");
 
-      await checkUser();
+      // await checkUser();
     } catch (error) {
       const authError = error as AuthError;
       toast.error(`There was a problem signing you out: ${authError.message}`);
@@ -255,36 +313,11 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     }
   };
 
-  const checkIsAdmin = async () => {
-    let isAdmin = false;
-    try {
-      const session = await fetchAuthSession();
-      const tokens = session.tokens;
-      if (tokens && Object.keys(tokens).length > 0) {
-        const groups = tokens.accessToken.payload["cognito:groups"];
-        if (groups && Array.isArray(groups) && groups.includes("adminUsers")) {
-          isAdmin = true;
-        } else {
-          isAdmin = false;
-        }
-      }
-    } catch (error) {
-      const authError = error as AuthError;
-      console.error(`Error checking admin status: ${authError.message}`);
-    }
-
-    return isAdmin;
-  };
-
   return (
     <AuthContext.Provider
       value={{
-        isLoggedIn,
         signInStep,
         setSignInStep,
-        isAdmin,
-        user,
-        checkUser,
         signIn,
         signOut,
         signUp,
@@ -293,6 +326,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
         resetAuthState,
         intendedPath,
         setIntendedPath,
+        authState,
       }}
     >
       {children}

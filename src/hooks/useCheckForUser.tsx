@@ -5,6 +5,7 @@ const useCheckForUser = () => {
   const initialIsLoggedIn = localStorage.getItem("isLoggedIn") === "true";
   const [isLoggedIn, setIsLoggedIn] = useState(initialIsLoggedIn);
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const checkUser = useCallback(async () => {
     try {
@@ -15,6 +16,8 @@ const useCheckForUser = () => {
       console.error(err);
       setIsLoggedIn(false);
       setUser(null);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -22,7 +25,7 @@ const useCheckForUser = () => {
     checkUser();
   }, [checkUser]);
 
-  return { isLoggedIn, user, checkUser };
+  return { isLoggedIn, user, checkUser, isLoading };
 };
 
 export default useCheckForUser;
