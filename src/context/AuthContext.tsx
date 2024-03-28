@@ -1,28 +1,19 @@
-import React, {
-  useState,
-  useContext,
-  createContext,
-  useEffect,
-  useRef,
-} from "react";
+import React, { useState, useContext, createContext, useEffect } from "react";
 import {
   signUp as awsSignUp,
   confirmSignUp as awsConfirmSignUp,
   signIn as awsSignIn,
   confirmSignIn as awsConfirmSignIn,
   signOut as awsSignOut,
-  getCurrentUser,
   AuthError,
   AuthUser,
   SignInInput,
-  fetchAuthSession,
   ConfirmSignUpInput,
   ConfirmSignInInput,
 } from "aws-amplify/auth";
 import { NavigateFunction } from "react-router-dom";
 import { toast } from "react-toastify";
 import useIsAdmin from "../hooks/useIsAdmin";
-import useLocalStorageSessionId from "../hooks/useLocalStorageSessionId";
 import useSession from "../hooks/useSession";
 import useCheckForUser from "../hooks/useCheckForUser";
 
@@ -100,60 +91,173 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   const {
     isAdmin,
     isLoading: isAdminCheckLoading,
+    isCheckRun: isAdminCheckRun,
     checkIsAdmin,
+    setIsCheckRun: setIsAdminCheckRun,
+    reset: resetIsAdminCheck,
   } = useIsAdmin();
   const {
-    isLoggedIn,
     isLoading: isUserCheckLoading,
+    isCheckRun: isUserCheckRun,
     user,
     checkUser,
+    reset: resetUserCheck,
   } = useCheckForUser();
-  const localStorageSessionId = localStorage.getItem("sessionId");
   const {
     session,
-    createSession,
-    updateSession,
     deleteSession,
     isLoading: isSessionLoading,
+    isSessionCheckRun,
     getSession,
+    setIsSessionCheckRun,
+    reset: resetSessionCheck,
   } = useSession();
 
+  // When you don't know the authState...
   useEffect(() => {
-    if (!isUserCheckLoading && !isSessionLoading && !isAdminCheckLoading) {
-      console.log("user, admin, and session check complete");
-      console.log("user", user);
-      console.log("session", session);
-      console.log("isAdmin", isAdmin);
-
-      // If we have a session, sessionId in authState should be set.
-      // Likewise, with user.
+    if (!isUserCheckRun || !isAdminCheckRun || !isSessionCheckRun) {
+      console.log("setting isAuthStateKnown to false");
       setAuthState((prevState) => ({
         ...prevState,
-        isLoggedIn: isLoggedIn,
-        isAdmin: isAdmin,
+        isAuthStateKnown: false,
+      }));
+    }
+  }, [isUserCheckRun, isAdminCheckRun, isSessionCheckRun]);
+
+  useEffect(() => {
+    // Check whether user is signed in.
+    // Make sure user check has not only started but also completed.
+
+    // Could the user object be stale here?
+
+    // We don't know isAuthStateKnown.
+    if (isUserCheckRun && !isUserCheckLoading) {
+      console.log("Setting user in authState", user);
+      setAuthState((prevState) => ({
+        ...prevState,
         user: user,
-        sessionId: session ? session.id : null,
+        isLoggedIn: !!user,
+        isAuthStateKnown: false,
+      }));
+      getSession(user);
+    }
+  }, [isUserCheckRun, isUserCheckLoading, user, getSession]);
+
+  useEffect(() => {
+    if (!isUserCheckRun) {
+      console.log("calling checkUser because isUserCheckRun is false");
+      checkUser();
+    }
+  }, [checkUser, isUserCheckRun]);
+
+  useEffect(() => {
+    // Could session be stale here?
+    if (
+      isUserCheckRun &&
+      !isUserCheckLoading &&
+      isSessionCheckRun &&
+      !isSessionLoading
+    ) {
+      if (session) {
+        console.log("Setting sessionId in authState", session.id);
+        setAuthState((prevState) => ({
+          ...prevState,
+          sessionId: session.id,
+        }));
+      }
+    }
+  }, [
+    isSessionLoading,
+    isSessionCheckRun,
+    isUserCheckRun,
+    isUserCheckLoading,
+    session,
+  ]);
+
+  useEffect(() => {
+    // Check whether user is an admin.
+    if (isAdminCheckRun && !isAdminCheckLoading) {
+      console.log("Setting isAdmin in authState", isAdmin);
+      setAuthState((prevState) => ({
+        ...prevState,
+        isAdmin: isAdmin,
+      }));
+    }
+  }, [isAdminCheckRun, isAdminCheckLoading, isAdmin]);
+
+  useEffect(() => {
+    console.log("calling checkIsAdmin because user changed", user);
+    const checkIfUserIsAdmin = async () => {
+      await checkIsAdmin();
+    };
+    // Whenever user changes, check whether user is an admin.
+    checkIfUserIsAdmin();
+  }, [checkIsAdmin, user]);
+
+  // If we don't have a session, as after signOut, we need to create one.
+  // Should signOut just set authState.sessionId to null and thereby trigger this?
+  useEffect(() => {
+    if (!authState.sessionId) {
+      console.log(
+        "authState.sessionId changed and authState.sessionId is falsey"
+      );
+      getSession(user);
+    }
+  }, [authState.sessionId]);
+
+  useEffect(() => {
+    if (
+      isUserCheckRun &&
+      !isUserCheckLoading &&
+      isAdminCheckRun &&
+      !isAdminCheckLoading &&
+      isSessionCheckRun &&
+      !isSessionLoading
+    ) {
+      console.log(
+        "Everything has run, so setting isAuthStateKnown in authState to true"
+      );
+      setAuthState((prevState) => ({
+        ...prevState,
+        user: user,
+        sessionId: session?.id,
+        isAdmin: isAdmin,
+        isLoggedIn: !!user,
         isAuthStateKnown: true,
       }));
     }
   }, [
-    isUserCheckLoading,
-    isSessionLoading,
-    isAdminCheckLoading,
-    isLoggedIn,
     isAdmin,
-    session,
+    isAdminCheckLoading,
+    isAdminCheckRun,
+    isSessionCheckRun,
+    isSessionLoading,
+    isUserCheckLoading,
+    isUserCheckRun,
+    session?.id,
     user,
   ]);
 
+  const resetChecks = () => {
+    console.log("Resetting checks");
+    setAuthState((prevState) => ({
+      ...prevState,
+      isAuthStateKnown: false,
+    }));
+    resetUserCheck();
+    resetIsAdminCheck();
+    resetSessionCheck();
+  };
+
   const resetAuthState = () => {
+    console.log("Resetting authState");
     setSignInStep(defaultState.signInStep);
     setAuthState({
       isLoggedIn: false,
       isAdmin: false,
       user: null,
       sessionId: null,
-      isAuthStateKnown: false,
+      isAuthStateKnown: true,
     });
     localStorage.removeItem("isLoggedIn");
   };
@@ -164,18 +268,14 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     try {
       const result = await awsSignIn({ username, password });
       console.log("result", result);
-      const isSignedIn = result.isSignedIn;
       const nextStep = result.nextStep;
 
       setSignInStep(nextStep.signInStep);
-      setAuthState((prevState) => ({
-        ...prevState,
-        isLoggedIn: isSignedIn,
-      }));
 
       if (nextStep.signInStep === "DONE") {
-        await checkUser();
-        await checkIsAdmin();
+        console.log("about to call checkUser. authState", authState);
+        resetChecks();
+
         toast.success("Sign in complete!");
         navigate(intendedPath || "/");
         setIntendedPath(null);
@@ -188,11 +288,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     } catch (error) {
       // NotAuthorizedException: Incorrect username or password.
       const authError = error as AuthError;
-      // setIsLoggedIn(false);
-      setAuthState((prevState) => ({
-        ...prevState,
-        isLoggedIn: false,
-      }));
+      await checkUser();
       toast.error(`There was a problem signing you in: ${authError.message}`);
       console.error("error signing in", error);
     }
@@ -213,6 +309,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
       setAuthState((prevState) => ({
         ...prevState,
         isLoggedIn: isSignedIn,
+        isAuthStateKnown: false,
       }));
       setSignInStep(nextStep.signInStep);
       // if (isSignedIn) {
@@ -238,27 +335,22 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   };
 
   const signOut = async (navigate: NavigateFunction) => {
-    // Mark session as ended or "should delete"?
+    console.log("SIGNING OUT");
+    const sessionId = authState.sessionId;
     try {
       await awsSignOut();
-      setAuthState((prevState) => ({
-        ...prevState,
-        isLoggedIn: false,
-        isAdmin: false,
-        user: null,
-        sessionId: null,
-      }));
 
-      // assume if user signs out, they really don't want session
-      // persisting in browser. So remove it.
+      // Shouldn't need to call checkIsAdmin because user has changed.
+      // And that should cause checkIsAdmin to be called.
+      // await checkIsAdmin();
+      // resetAuthState();
       console.log("removing session");
-      localStorage.removeItem("sessionId");
-      localStorage.removeItem("isLoggedIn");
-      // setIsAdmin(false);
-      // localStorage.removeItem("isLoggedIn");
-      navigate("/");
-
+      if (sessionId) {
+        await deleteSession(sessionId);
+      }
       // await checkUser();
+      resetChecks();
+      navigate("/");
     } catch (error) {
       const authError = error as AuthError;
       toast.error(`There was a problem signing you out: ${authError.message}`);
