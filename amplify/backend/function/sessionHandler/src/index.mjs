@@ -102,28 +102,48 @@ async function createSession(userId) {
   }
 }
 
-async function updateSession(sessionId, userId) {
+async function updateSession(event) {
+  if (!event.body) {
+    return {
+      statusCode: 400,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "*",
+      },
+      body: JSON.stringify({
+        message: "Request body is required",
+      }),
+    };
+  }
+  const body = JSON.parse(event.body);
+  console.log("body", body);
+  const sessionId = body.id;
+  const userId = body.userId ? body.userId : null;
   const updatedAt = new Date().toISOString();
 
   const params = {
     TableName: tableName,
-    Key: marshall({ id: sessionId }),
+    Key: marshall({ id: sessionId }, { removeUndefinedValues: true }),
     UpdateExpression: "SET #userId = :userId, #updatedAt = :updatedAt",
     ExpressionAttributeNames: {
       "#userId": "userId",
       "#updatedAt": "updatedAt",
     },
-    ExpressionAttributeValues: marshall({
-      ":userId": userId ? userId : null,
-      ":updatedAt": updatedAt,
-    }),
-    ReturnValues: "ALL_NEW",
+    ExpressionAttributeValues: marshall(
+      {
+        ":userId": userId ? userId : null,
+        ":updatedAt": updatedAt,
+      },
+      { removeUndefinedValues: true }
+    ),
+    ReturnValues: "UPDATED_NEW",
   };
 
   const updateItemCommand = new UpdateItemCommand(params);
 
   try {
-    await ddbClient.send(updateItemCommand);
+    const { Attributes } = await ddbClient.send(updateItemCommand);
+    const unmarshalledAttributes = unmarshall(Attributes);
     return {
       statusCode: 200,
       //  Uncomment below to enable CORS requests
@@ -131,7 +151,7 @@ async function updateSession(sessionId, userId) {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "*",
       },
-      body: JSON.stringify("Session updated successfully!"),
+      body: JSON.stringify(unmarshalledAttributes),
     };
   } catch (error) {
     console.error(`Error updating session: ${error}`);
@@ -175,7 +195,7 @@ export async function handler(event) {
     case "GET":
       return getSession(sessionId);
     case "PATCH":
-      return updateSession(sessionId, userId);
+      return updateSession(event);
     default:
       return {
         statusCode: 400,
