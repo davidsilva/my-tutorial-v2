@@ -21,7 +21,6 @@ const useCheckForUser = () => {
       currentUser = null;
     } finally {
       setIsLoading(false);
-      console.log("calling setUser with", currentUser);
       setUser(currentUser);
     }
   }, []);
