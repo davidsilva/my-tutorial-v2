@@ -2,12 +2,12 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { post, get, patch } from "aws-amplify/api";
 import useSession from "./useSession";
 import { describe, test, expect, vi } from "vitest";
-import { UpdateSessionInput, Session, User } from "../API";
+import { Session, User } from "../API";
 
 type SessionType = Session | null;
 
 const { localStorageMock } = vi.hoisted(() => {
-  let store: { [key: string]: string } = { sessionId: "sessionId123" };
+  let store: { [key: string]: string } = {};
   return {
     localStorageMock: {
       getItem: vi.fn().mockImplementation((key: string) => store[key] || null),
@@ -25,22 +25,21 @@ const { localStorageMock } = vi.hoisted(() => {
 });
 
 vi.mock("./useLocalStorage", () => {
-  let localStorageSessionId = localStorageMock.getItem("sessionId");
-  const setLocalStorageSessionId = vi
-    .fn()
-    .mockImplementation((id: string | null) => {
-      if (id === null) {
-        localStorageMock.removeItem("sessionId");
-      } else {
-        localStorageMock.setItem("sessionId", id);
-      }
-      localStorageSessionId = id;
-    });
   return {
-    default: vi
-      .fn()
-      .mockReturnValue([localStorageSessionId, setLocalStorageSessionId]),
-    setLocalStorageSessionId,
+    default: (key: string, initialValue: string | null = null) => {
+      let localStorageValue = localStorageMock.getItem(key) || initialValue;
+      const setLocalStorageValue = vi
+        .fn()
+        .mockImplementation((newValue: string) => {
+          if (newValue === null) {
+            localStorageMock.removeItem(key);
+          } else {
+            localStorageMock.setItem(key, newValue);
+          }
+          localStorageValue = newValue;
+        });
+      return [localStorageValue, setLocalStorageValue];
+    },
   };
 });
 
@@ -57,12 +56,25 @@ const { mockUser } = vi.hoisted(() => {
   };
 });
 
-const { mockSession } = vi.hoisted(() => {
+const { mockSessionWithoutUser } = vi.hoisted(() => {
   return {
-    mockSession: {
+    mockSessionWithoutUser: {
       __typename: "Session",
       id: "sessionId123",
-      userId: "userId123",
+      userId: null,
+      user: null,
+      createdAt: "2021-09-01T00:00:00.000Z",
+      updatedAt: "2021-09-01T00:00:00.000Z",
+    } as SessionType,
+  };
+});
+
+const { mockSessionWithUser } = vi.hoisted(() => {
+  return {
+    mockSessionWithUser: {
+      __typename: "Session",
+      id: "sessionId123",
+      userId: mockUser.userId,
       user: mockUser,
       createdAt: "2021-09-01T00:00:00.000Z",
       updatedAt: "2021-09-01T00:00:00.000Z",
@@ -72,18 +84,58 @@ const { mockSession } = vi.hoisted(() => {
 
 vi.mock("aws-amplify/api", () => {
   return {
-    post: vi.fn().mockResolvedValue({
-      response: { body: { json: vi.fn().mockResolvedValue(mockSession) } },
+    post: vi.fn().mockImplementation(({ path }) => {
+      if (path === `/session?userId=${encodeURIComponent(mockUser.userId)}`) {
+        const mockSessionWithUserId = {
+          ...mockSessionWithoutUser,
+          user: mockUser,
+          userId: mockUser.userId,
+        };
+        return {
+          response: Promise.resolve({
+            body: {
+              json: vi.fn().mockResolvedValue(mockSessionWithUserId),
+            },
+          }),
+        };
+      } else {
+        return {
+          response: Promise.resolve({
+            body: {
+              json: vi.fn().mockResolvedValue(mockSessionWithoutUser),
+            },
+          }),
+        };
+      }
     }),
-    get: vi.fn().mockResolvedValue({
-      response: Promise.resolve({
-        body: {
-          json: vi.fn().mockResolvedValue(mockSession),
-        },
-      }),
+    get: vi.fn().mockImplementation(({ path }) => {
+      if (path === `/session/${mockSessionWithoutUser?.id}`) {
+        return {
+          response: Promise.resolve({
+            body: {
+              json: vi.fn().mockResolvedValue(mockSessionWithoutUser),
+            },
+          }),
+        };
+      } else {
+        return {
+          response: Promise.resolve({
+            body: {
+              json: vi.fn().mockResolvedValue(null),
+            },
+          }),
+        };
+      }
     }),
-    patch: vi.fn().mockResolvedValue({
-      response: { body: { json: vi.fn().mockResolvedValue(mockSession) } },
+    patch: vi.fn().mockImplementation(({ apiName, path, options }) => {
+      const updates = options.body;
+      return {
+        response: Promise.resolve({
+          body: {
+            json: vi.fn().mockResolvedValue(updates),
+          },
+        }),
+      };
     }),
   };
 });
@@ -92,15 +144,45 @@ describe("useSession", () => {
   beforeEach(() => {
     localStorageMock.clear();
     vi.clearAllMocks();
-    localStorageMock.setItem("sessionId", "hello");
   });
   test("should get session corresponding to sessionId in localStorage", async () => {
+    localStorageMock.setItem("sessionId", "sessionId123");
     const { result } = renderHook(() => useSession());
     await waitFor(async () => {
       await result.current.getSession(mockUser);
-      expect(result.current.session).toBe(mockSession);
+      expect(result.current.session).toStrictEqual(mockSessionWithUser);
+      expect(get).toHaveBeenCalled();
+      expect(patch).toHaveBeenCalled();
+      expect(post).not.toHaveBeenCalled();
     });
-    localStorageMock.setItem("cat", "agatha");
-    console.log("cat", localStorageMock.getItem("cat"));
+  });
+  // If there is no sessionId in localStorage, a new session should be created. The session should have a userId if the user is signed in.
+  test("should create a new session if there is no sessionId in localStorage", async () => {
+    // post should be called. sessionId should not exist in localStorage. session should be set to the response from post.
+    // get(null) will return mockSessionWithoutUser.
+    expect(localStorageMock.getItem("sessionId")).toBe(null);
+    const { result } = renderHook(() => useSession());
+    await waitFor(async () => {
+      await result.current.getSession(null);
+      expect(result.current.session).toStrictEqual(mockSessionWithoutUser);
+      expect(get).toHaveBeenCalled();
+      expect(post).toHaveBeenCalled();
+      expect(patch).not.toHaveBeenCalled();
+    });
+  });
+  // If there is a sessionId in localStorage, but the session does not have a userId, the session should be updated with the userId of the signed-in user.
+  test("should update the session with the userId of the signed-in user if the session does not have a userId", async () => {
+    // patch should be called.
+    // get() will return mockSessionWithoutUser.
+    // patch() will return mockSessionWithUser.
+    localStorageMock.setItem("sessionId", "sessionId123");
+    const { result } = renderHook(() => useSession());
+    await waitFor(async () => {
+      await result.current.getSession(mockUser);
+      expect(result.current.session).toStrictEqual(mockSessionWithUser);
+      expect(get).toHaveBeenCalled();
+      expect(patch).toHaveBeenCalled();
+      expect(post).not.toHaveBeenCalled();
+    });
   });
 });

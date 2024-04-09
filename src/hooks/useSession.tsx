@@ -21,11 +21,33 @@ const useSession = () => {
       let sessionData: SessionType = null;
 
       if (sessionId) {
-        const response = await get({
+        const result = await get({
           apiName: "SessionAPI",
           path: `/session/${sessionId}`,
-        }).response;
-        sessionData = (await response.body.json()) as SessionType;
+        });
+        const { body } = await result.response;
+        sessionData = (await body.json()) as SessionType;
+      }
+
+      if (user?.userId && sessionData && sessionData.userId !== user?.userId) {
+        try {
+          const response = await patch({
+            apiName: "SessionAPI",
+            path: `/session/${sessionId}`,
+            options: {
+              body: {
+                id: sessionId,
+                userId: user.userId,
+                user: user,
+              } as Partial<SessionType>,
+            },
+          }).response;
+          // The response only contains properties that are updated, e.g., userId and updatedAt.
+          const updates = (await response.body.json()) as Partial<SessionType>;
+          sessionData = { ...sessionData, ...updates };
+        } catch (error) {
+          console.error("Error updating session with user", error);
+        }
       }
 
       if (!sessionData || !sessionId) {
