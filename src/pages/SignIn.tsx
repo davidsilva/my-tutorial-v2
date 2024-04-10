@@ -2,7 +2,9 @@ import { useAuthContext } from "../context/AuthContext";
 import { SignIn as SignInForm } from "../components";
 
 const SignIn = () => {
-  const { isAdmin, isLoggedIn } = useAuthContext();
+  const { authState } = useAuthContext();
+  const isLoggedIn = authState?.isLoggedIn;
+  const isAdmin = authState?.isAdmin;
 
   if (isLoggedIn) {
     return <p>You are already signed in.</p>;

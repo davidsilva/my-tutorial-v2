@@ -1,24 +1,31 @@
 import { describe, expect, test, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import SignIn from "./SignIn";
-import { AuthContextProvider } from "../context/AuthContext";
+import { AuthContextType, AuthStateType } from "../context/AuthContext";
 import { MemoryRouter } from "react-router-dom";
+import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
     useAuthContextMock: vi.fn().mockReturnValue({
-      isLoggedIn: false,
       signInStep: "",
       setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: null,
       signIn: vi.fn(),
       signOut: vi.fn(),
       signUp: vi.fn(),
       confirmSignUp: vi.fn(),
       confirmSignIn: vi.fn(),
       resetAuthState: vi.fn(),
-    }),
+      intendedPath: null,
+      setIntendedPath: vi.fn(),
+      authState: {
+        isLoggedIn: true,
+        isAuthStateKnown: true,
+        user: { username: "testuser", userId: "123" },
+        isAdmin: false,
+        sessionId: "123",
+      } as AuthStateType,
+    } as AuthContextType),
   };
 });
 
@@ -36,9 +43,9 @@ const renderSignIn = async () => {
   await waitFor(() => {
     render(
       <MemoryRouter>
-        <AuthContextProvider>
+        <MockAuthProvider>
           <SignIn />
-        </AuthContextProvider>
+        </MockAuthProvider>
       </MemoryRouter>
     );
   });
@@ -48,18 +55,14 @@ describe("Sign In page", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    vi.mocked(useAuthContextMock).mockReturnValueOnce({
-      isLoggedIn: false,
-      signInStep: "",
-      setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: null,
-      signIn: vi.fn(),
-      signOut: vi.fn(),
-      signUp: vi.fn(),
-      confirmSignUp: vi.fn(),
-      confirmSignIn: vi.fn(),
-      resetAuthState: vi.fn(),
+    vi.mocked(useAuthContextMock).mockReturnValue({
+      ...useAuthContextMock(),
+      authState: {
+        ...useAuthContextMock().authState,
+        isLoggedIn: false,
+        isAdmin: false,
+        user: null,
+      },
     });
 
     await renderSignIn();
@@ -77,20 +80,16 @@ describe("Sign In page", () => {
 
 describe("Sign In page with user already signed in", () => {
   beforeEach(async () => {
-    vi.resetAllMocks();
+    vi.clearAllMocks();
 
-    vi.mocked(useAuthContextMock).mockReturnValueOnce({
-      isLoggedIn: true,
-      signInStep: "",
-      setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: null,
-      signIn: vi.fn(),
-      signOut: vi.fn(),
-      signUp: vi.fn(),
-      confirmSignUp: vi.fn(),
-      confirmSignIn: vi.fn(),
-      resetAuthState: vi.fn(),
+    vi.mocked(useAuthContextMock).mockReturnValue({
+      ...useAuthContextMock(),
+      authState: {
+        ...useAuthContextMock().authState,
+        isLoggedIn: true,
+        isAdmin: false,
+        user: { username: "testuser", userId: "123" },
+      },
     });
 
     await renderSignIn();
