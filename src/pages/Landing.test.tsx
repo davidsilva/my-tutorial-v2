@@ -2,17 +2,22 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import Landing from "./Landing";
 import { MemoryRouter } from "react-router-dom";
-import { AuthContextProvider, useAuthContext } from "../context/AuthContext";
+import {
+  useAuthContext,
+  AuthStateType,
+  AuthContextType,
+} from "../context/AuthContext";
 import { ReactNode } from "react";
 import { CartContextProvider } from "../context/CartContext";
+import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
 const renderWithAuthContext = async (component: ReactNode) => {
   await waitFor(() => {
     render(
       <MemoryRouter>
-        <AuthContextProvider>
+        <MockAuthProvider>
           <CartContextProvider>{component}</CartContextProvider>
-        </AuthContextProvider>
+        </MockAuthProvider>
       </MemoryRouter>
     );
   });
@@ -50,19 +55,24 @@ vi.mock("aws-amplify/auth");
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
     useAuthContextMock: vi.fn().mockReturnValue({
-      isLoggedIn: false,
       signInStep: "",
       setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: null,
-      checkUser: vi.fn(),
       signIn: vi.fn(),
       signOut: vi.fn(),
       signUp: vi.fn(),
       confirmSignUp: vi.fn(),
       confirmSignIn: vi.fn(),
       resetAuthState: vi.fn(),
-    }),
+      intendedPath: null,
+      setIntendedPath: vi.fn(),
+      authState: {
+        isLoggedIn: true,
+        isAuthStateKnown: true,
+        user: { username: "testuser", userId: "123" },
+        isAdmin: false,
+        sessionId: "123",
+      } as AuthStateType,
+    } as AuthContextType),
   };
 });
 
@@ -80,19 +90,13 @@ describe("Landing", () => {
       vi.clearAllMocks();
 
       vi.mocked(useAuthContext).mockReturnValueOnce({
-        isLoggedIn: true,
-        signInStep: "",
-        setSignInStep: vi.fn(),
-        isAdmin: false,
-        user: null,
-        checkUser: vi.fn(),
-        signIn: vi.fn(),
-        signOut: vi.fn(),
-        signUp: vi.fn(),
-        confirmSignUp: vi.fn(),
-        confirmSignIn: vi.fn(),
-        resetAuthState: vi.fn(),
-        setIntendedPath: vi.fn(),
+        ...useAuthContextMock(),
+        authState: {
+          ...useAuthContextMock().authState,
+          isLoggedIn: true,
+          isAdmin: false,
+          user: { username: "testuser", userId: "123" },
+        },
       });
 
       await renderWithAuthContext(<Landing />);
@@ -116,19 +120,13 @@ describe("Landing", () => {
       vi.clearAllMocks();
 
       vi.mocked(useAuthContext).mockReturnValueOnce({
-        isLoggedIn: false,
-        signInStep: "",
-        setSignInStep: vi.fn(),
-        isAdmin: false,
-        user: null,
-        checkUser: vi.fn(),
-        signIn: vi.fn(),
-        signOut: vi.fn(),
-        signUp: vi.fn(),
-        confirmSignUp: vi.fn(),
-        confirmSignIn: vi.fn(),
-        resetAuthState: vi.fn(),
-        setIntendedPath: vi.fn(),
+        ...useAuthContextMock(),
+        authState: {
+          ...useAuthContextMock().authState,
+          isLoggedIn: false,
+          isAdmin: false,
+          user: null,
+        },
       });
 
       await renderWithAuthContext(<Landing />);
