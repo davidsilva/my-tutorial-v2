@@ -20,7 +20,10 @@ function ProductDetail() {
   >(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const { isLoggedIn, isAdmin } = useAuthContext();
+  const { authState } = useAuthContext();
+  const isLoggedIn = authState?.isLoggedIn;
+  const isAdmin = authState?.isAdmin;
+  const isAuthStateKnown = authState?.isAuthStateKnown;
   const { addToCart } = useCartContext();
   const navigate = useNavigate();
 
@@ -55,8 +58,8 @@ function ProductDetail() {
       }
     };
 
-    fetchProduct();
-  }, [productId, isLoggedIn]);
+    if (isAuthStateKnown) fetchProduct();
+  }, [productId, isLoggedIn, isAuthStateKnown]);
 
   const handleEdit = () => {
     if (!product) return;

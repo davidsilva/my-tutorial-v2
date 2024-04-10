@@ -2,24 +2,31 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { GetProductWithReviewsQuery } from "../API";
 import ProductDetail from "./ProductDetail";
 import { MemoryRouter } from "react-router-dom";
-import { AuthContextProvider } from "../context/AuthContext";
+import { AuthContextType, AuthStateType } from "../context/AuthContext";
 import { CartContextProvider } from "../context/CartContext";
+import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
     useAuthContextMock: vi.fn().mockReturnValue({
-      isLoggedIn: false,
       signInStep: "",
       setSignInStep: vi.fn(),
-      isAdmin: true,
-      user: null,
       signIn: vi.fn(),
       signOut: vi.fn(),
       signUp: vi.fn(),
       confirmSignUp: vi.fn(),
       confirmSignIn: vi.fn(),
       resetAuthState: vi.fn(),
-    }),
+      intendedPath: null,
+      setIntendedPath: vi.fn(),
+      authState: {
+        isLoggedIn: true,
+        isAuthStateKnown: true,
+        user: { username: "testuser", userId: "123" },
+        isAdmin: false,
+        sessionId: "123",
+      } as AuthStateType,
+    } as AuthContextType),
   };
 });
 
@@ -111,11 +118,11 @@ const renderProductDetail = async () => {
   await waitFor(async () => {
     render(
       <MemoryRouter>
-        <AuthContextProvider>
+        <MockAuthProvider>
           <CartContextProvider>
             <ProductDetail />
           </CartContextProvider>
-        </AuthContextProvider>
+        </MockAuthProvider>
       </MemoryRouter>
     );
   });
@@ -127,17 +134,13 @@ describe("ProductDetail", () => {
       vi.clearAllMocks();
 
       vi.mocked(useAuthContextMock).mockReturnValue({
-        isLoggedIn: false,
-        signInStep: "",
-        setSignInStep: vi.fn(),
-        isAdmin: false,
-        user: null,
-        signIn: vi.fn(),
-        signOut: vi.fn(),
-        signUp: vi.fn(),
-        confirmSignUp: vi.fn(),
-        confirmSignIn: vi.fn(),
-        resetAuthState: vi.fn(),
+        ...useAuthContextMock(),
+        authState: {
+          ...useAuthContextMock().authState,
+          isLoggedIn: false,
+          user: null,
+          isAdmin: false,
+        },
       });
 
       await renderProductDetail();
@@ -166,21 +169,13 @@ describe("ProductDetail", () => {
       vi.clearAllMocks();
 
       vi.mocked(useAuthContextMock).mockReturnValue({
-        isLoggedIn: true,
-        signInStep: "",
-        setSignInStep: vi.fn(),
-        isAdmin: false,
-        user: {
-          userId: "123",
-          username: "johndoe",
-          email: "testuser@test.com",
+        ...useAuthContextMock(),
+        authState: {
+          ...useAuthContextMock().authState,
+          isLoggedIn: true,
+          isAdmin: false,
+          user: { username: "testuser", userId: "123" },
         },
-        signIn: vi.fn(),
-        signOut: vi.fn(),
-        signUp: vi.fn(),
-        confirmSignUp: vi.fn(),
-        confirmSignIn: vi.fn(),
-        resetAuthState: vi.fn(),
       });
 
       await renderProductDetail();
@@ -209,21 +204,13 @@ describe("ProductDetail", () => {
       vi.clearAllMocks();
 
       vi.mocked(useAuthContextMock).mockReturnValue({
-        isLoggedIn: true,
-        signInStep: "",
-        setSignInStep: vi.fn(),
-        isAdmin: true,
-        user: {
-          userId: "123",
-          username: "johndoe",
-          email: "testuser@test.com",
+        ...useAuthContextMock(),
+        authState: {
+          ...useAuthContextMock().authState,
+          isLoggedIn: true,
+          isAdmin: true,
+          user: { username: "testuser", userId: "123" },
         },
-        signIn: vi.fn(),
-        signOut: vi.fn(),
-        signUp: vi.fn(),
-        confirmSignUp: vi.fn(),
-        confirmSignIn: vi.fn(),
-        resetAuthState: vi.fn(),
       });
 
       await renderProductDetail();
