@@ -8,7 +8,9 @@ type ProtectedRouterProps = PropsWithChildren<{
 
 const ProtectedRoute = ({ children, role = "user" }: ProtectedRouterProps) => {
   const navigate = useNavigate();
-  const { isLoggedIn, isAdmin, setIntendedPath } = useAuthContext();
+  const { authState, setIntendedPath } = useAuthContext();
+  const isLoggedIn = authState?.isLoggedIn;
+  const isAdmin = authState?.isAdmin;
 
   useEffect(() => {
     if (isLoggedIn === null || location.pathname === "/signin") return;

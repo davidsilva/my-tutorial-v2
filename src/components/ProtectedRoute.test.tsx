@@ -1,7 +1,8 @@
 import { render, waitFor, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { AuthContextProvider } from "../context/AuthContext";
+import { AuthStateType, AuthContextType } from "../context/AuthContext";
 import ProtectedRoute from "./ProtectedRoute";
+import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
 vi.mock("aws-amplify/auth");
 
@@ -22,10 +23,24 @@ vi.mock("react-router-dom", async () => {
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
     useAuthContextMock: vi.fn().mockReturnValue({
-      isLoggedIn: false,
-      isAdmin: false,
+      signInStep: "",
+      setSignInStep: vi.fn(),
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+      signUp: vi.fn(),
+      confirmSignUp: vi.fn(),
+      confirmSignIn: vi.fn(),
+      resetAuthState: vi.fn(),
+      intendedPath: null,
       setIntendedPath: vi.fn(),
-    }),
+      authState: {
+        isLoggedIn: true,
+        isAuthStateKnown: true,
+        user: { username: "testuser", userId: "123" },
+        isAdmin: false,
+        sessionId: "123",
+      } as AuthStateType,
+    } as AuthContextType),
   };
 });
 
@@ -36,17 +51,22 @@ describe("ProtectedRoute", () => {
 
   test("redirects to /signin when not logged in", async () => {
     useAuthContextMock.mockReturnValue({
-      isLoggedIn: false,
-      isAdmin: false,
-      setIntendedPath: vi.fn(),
+      ...useAuthContextMock(),
+      authState: {
+        isLoggedIn: false,
+        isAuthStateKnown: true,
+        user: null,
+        isAdmin: false,
+        sessionId: null,
+      },
     });
 
     await waitFor(() => {
       render(
         <MemoryRouter>
-          <AuthContextProvider>
+          <MockAuthProvider>
             <ProtectedRoute />
-          </AuthContextProvider>
+          </MockAuthProvider>
         </MemoryRouter>
       );
     });
@@ -56,17 +76,20 @@ describe("ProtectedRoute", () => {
 
   test("redirects to /not-authorized when not logged in as admin", async () => {
     useAuthContextMock.mockReturnValue({
-      isLoggedIn: true,
-      isAdmin: false,
-      setIntendedPath: vi.fn(),
+      ...useAuthContextMock(),
+      authState: {
+        ...useAuthContextMock().authState,
+        isLoggedIn: true,
+        isAdmin: false,
+      },
     });
 
     await waitFor(() => {
       render(
         <MemoryRouter>
-          <AuthContextProvider>
+          <MockAuthProvider>
             <ProtectedRoute role="admin" />
-          </AuthContextProvider>
+          </MockAuthProvider>
         </MemoryRouter>
       );
     });
@@ -76,19 +99,22 @@ describe("ProtectedRoute", () => {
 
   test("renders children when user is logged in and has correct role", async () => {
     useAuthContextMock.mockReturnValue({
-      isLoggedIn: true,
-      isAdmin: true,
-      setIntendedPath: vi.fn(),
+      ...useAuthContextMock(),
+      authState: {
+        ...useAuthContextMock().authState,
+        isLoggedIn: true,
+        isAdmin: true,
+      },
     });
 
     await waitFor(() => {
       render(
         <MemoryRouter>
-          <AuthContextProvider>
+          <MockAuthProvider>
             <ProtectedRoute role="admin">
               <div>Protected content</div>
             </ProtectedRoute>
-          </AuthContextProvider>
+          </MockAuthProvider>
         </MemoryRouter>
       );
     });
