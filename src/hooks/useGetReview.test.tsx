@@ -1,8 +1,9 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { AuthContextProvider } from "../context/AuthContext";
+import { AuthStateType, AuthContextType } from "../context/AuthContext";
 import useGetReview from "./useGetReview";
 import { ReactNode } from "react";
 import { GraphQLError } from "graphql";
+import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
 vi.mock("aws-amplify/auth");
 
@@ -19,18 +20,24 @@ vi.mock("aws-amplify/api", () => ({
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
     useAuthContextMock: vi.fn().mockReturnValue({
-      isLoggedIn: true,
       signInStep: "",
       setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: null,
       signIn: vi.fn(),
       signOut: vi.fn(),
       signUp: vi.fn(),
       confirmSignUp: vi.fn(),
       confirmSignIn: vi.fn(),
       resetAuthState: vi.fn(),
-    }),
+      intendedPath: null,
+      setIntendedPath: vi.fn(),
+      authState: {
+        isLoggedIn: true,
+        isAuthStateKnown: true,
+        user: { username: "testuser", userId: "123" },
+        isAdmin: false,
+        sessionId: "123",
+      } as AuthStateType,
+    } as AuthContextType),
   };
 });
 
@@ -97,7 +104,7 @@ describe("useGetReview", () => {
 
   test("should return review for given reviewId", async () => {
     const wrapper = ({ children }: { children?: ReactNode }) => (
-      <AuthContextProvider>{children}</AuthContextProvider>
+      <MockAuthProvider>{children}</MockAuthProvider>
     );
 
     const { result } = renderHook(
@@ -114,7 +121,7 @@ describe("useGetReview", () => {
 
   test("should return null if review is not found", async () => {
     const wrapper = ({ children }: { children?: ReactNode }) => (
-      <AuthContextProvider>{children}</AuthContextProvider>
+      <MockAuthProvider>{children}</MockAuthProvider>
     );
 
     const { result } = renderHook(

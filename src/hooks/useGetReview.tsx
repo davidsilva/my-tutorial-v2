@@ -11,7 +11,9 @@ const useGetReview = (reviewId: string | undefined) => {
   const [review, setReview] = useState<GetReviewQuery["getReview"]>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const { isLoggedIn } = useAuthContext();
+  const { authState } = useAuthContext();
+  const isLoggedIn = authState?.isLoggedIn;
+  const isAuthStateKnown = authState?.isAuthStateKnown;
 
   useEffect(() => {
     const fetchReview = async () => {
@@ -43,8 +45,8 @@ const useGetReview = (reviewId: string | undefined) => {
       }
     };
 
-    fetchReview();
-  }, [reviewId, isLoggedIn]);
+    if (isAuthStateKnown) fetchReview();
+  }, [reviewId, isLoggedIn, isAuthStateKnown]);
 
   return { review, errorMessage, isLoading };
 };
