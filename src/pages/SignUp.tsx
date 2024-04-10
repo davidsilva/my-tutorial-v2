@@ -30,7 +30,8 @@ const validationSchema = yup.object().shape({
 });
 
 const SignUp: React.FC = () => {
-  const { signUp, isLoggedIn } = useAuthContext();
+  const { signUp, authState } = useAuthContext();
+  const isLoggedIn = authState?.isLoggedIn;
   const navigate = useNavigate();
 
   const onSubmit = async (

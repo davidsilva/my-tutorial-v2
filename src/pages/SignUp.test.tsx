@@ -1,9 +1,10 @@
-import { describe, test, expect, beforeEach, vi, afterEach } from "vitest";
+import { describe, test, expect, beforeEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import SignUp from "./SignUp";
 import { MemoryRouter } from "react-router-dom";
-import { AuthContextProvider } from "../context/AuthContext";
+import { AuthContextType, AuthStateType } from "../context/AuthContext";
+import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
 const { mockNavigate } = vi.hoisted(() => {
   return { mockNavigate: vi.fn() };
@@ -16,19 +17,24 @@ const { signUpMock } = vi.hoisted(() => {
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
     useAuthContextMock: vi.fn().mockReturnValue({
-      isLoggedIn: false,
       signInStep: "",
       setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: null,
-      checkUser: vi.fn(),
       signIn: vi.fn(),
       signOut: vi.fn(),
       signUp: signUpMock,
       confirmSignUp: vi.fn(),
       confirmSignIn: vi.fn(),
       resetAuthState: vi.fn(),
-    }),
+      intendedPath: null,
+      setIntendedPath: vi.fn(),
+      authState: {
+        isLoggedIn: false,
+        isAuthStateKnown: true,
+        user: null,
+        isAdmin: false,
+        sessionId: "123",
+      } as AuthStateType,
+    } as AuthContextType),
   };
 });
 
@@ -57,33 +63,23 @@ describe("SignUp page when user is not logged in", () => {
     });
 
     vi.mocked(useAuthContextMock).mockReturnValue({
-      isLoggedIn: false,
-      signInStep: "",
-      setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: null,
-      checkUser: vi.fn(),
-      signIn: vi.fn(),
-      signOut: vi.fn(),
-      signUp: signUpMock,
-      confirmSignUp: vi.fn(),
-      confirmSignIn: vi.fn(),
-      resetAuthState: vi.fn(),
+      ...useAuthContextMock(),
+      authState: {
+        ...useAuthContextMock().authState,
+        isLoggedIn: false,
+        user: null,
+      },
     });
 
     await waitFor(() => {
       render(
         <MemoryRouter>
-          <AuthContextProvider>
+          <MockAuthProvider>
             <SignUp />
-          </AuthContextProvider>
+          </MockAuthProvider>
         </MemoryRouter>
       );
     });
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   test("renders sign up form when user is not logged in", async () => {
@@ -152,33 +148,23 @@ describe("SignUp page when user is logged in", () => {
     });
 
     vi.mocked(useAuthContextMock).mockReturnValue({
-      isLoggedIn: true,
-      signInStep: "",
-      setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: null,
-      checkUser: vi.fn(),
-      signIn: vi.fn(),
-      signOut: vi.fn(),
-      signUp: signUpMock,
-      confirmSignUp: vi.fn(),
-      confirmSignIn: vi.fn(),
-      resetAuthState: vi.fn(),
+      ...useAuthContextMock(),
+      authState: {
+        ...useAuthContextMock().authState,
+        isLoggedIn: true,
+        user: { username: "testuser", userId: "123" },
+      },
     });
 
     await waitFor(() => {
       render(
         <MemoryRouter>
-          <AuthContextProvider>
+          <MockAuthProvider>
             <SignUp />
-          </AuthContextProvider>
+          </MockAuthProvider>
         </MemoryRouter>
       );
     });
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   test("does not render sign up form when user is logged in", async () => {
