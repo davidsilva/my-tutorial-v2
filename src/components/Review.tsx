@@ -23,7 +23,10 @@ const Review: React.FC<ReviewProps> = ({ reviewId: propReviewId }) => {
   // Fetch and display the review using the reviewId...
   const { review, isLoading, errorMessage } = useGetReview(reviewId);
 
-  const { isLoggedIn, user } = useAuthContext();
+  const { authState } = useAuthContext();
+  const isLoggedIn = authState?.isLoggedIn;
+  const user = authState?.user;
+
   const username = user?.username;
 
   const handleEditReview = () => {

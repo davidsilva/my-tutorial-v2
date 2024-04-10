@@ -1,9 +1,10 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { AuthContextProvider } from "../context/AuthContext";
+import { AuthStateType, AuthContextType } from "../context/AuthContext";
 import { Review } from "./";
 import { Review as ReviewType } from "../API";
 import userEvent from "@testing-library/user-event";
+import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
 const { mockNavigate } = vi.hoisted(() => {
   return { mockNavigate: vi.fn() };
@@ -53,18 +54,24 @@ vi.mock("../hooks/useGetReview", () => {
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
     useAuthContextMock: vi.fn().mockReturnValue({
-      isLoggedIn: false,
       signInStep: "",
       setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: null,
       signIn: vi.fn(),
       signOut: vi.fn(),
       signUp: vi.fn(),
       confirmSignUp: vi.fn(),
       confirmSignIn: vi.fn(),
       resetAuthState: vi.fn(),
-    }),
+      intendedPath: null,
+      setIntendedPath: vi.fn(),
+      authState: {
+        isLoggedIn: true,
+        isAuthStateKnown: true,
+        user: { username: "testuser", userId: "123" },
+        isAdmin: false,
+        sessionId: "123",
+      } as AuthStateType,
+    } as AuthContextType),
   };
 });
 
@@ -80,9 +87,9 @@ const renderComponent = async () => {
   await waitFor(async () => {
     render(
       <MemoryRouter>
-        <AuthContextProvider>
+        <MockAuthProvider>
           <Review />
-        </AuthContextProvider>
+        </MockAuthProvider>
       </MemoryRouter>
     );
   });
@@ -92,6 +99,16 @@ describe("Review", () => {
   describe("when user is not logged in", () => {
     beforeEach(async () => {
       vi.clearAllMocks();
+
+      vi.mocked(useAuthContextMock).mockReturnValue({
+        ...useAuthContextMock(),
+        authState: {
+          ...useAuthContextMock().authState,
+          isLoggedIn: false,
+          isAdmin: false,
+          user: null,
+        },
+      });
       await renderComponent();
     });
 
@@ -106,19 +123,13 @@ describe("Review", () => {
     beforeEach(async () => {
       vi.clearAllMocks();
       vi.mocked(useAuthContextMock).mockReturnValue({
-        isLoggedIn: true,
-        signInStep: "",
-        setSignInStep: vi.fn(),
-        isAdmin: false,
-        user: {
-          username: "testuser",
+        ...useAuthContextMock(),
+        authState: {
+          ...useAuthContextMock().authState,
+          isLoggedIn: true,
+          isAdmin: false,
+          user: { username: "testuser", userId: "123" },
         },
-        signIn: vi.fn(),
-        signOut: vi.fn(),
-        signUp: vi.fn(),
-        confirmSignUp: vi.fn(),
-        confirmSignIn: vi.fn(),
-        resetAuthState: vi.fn(),
       });
       await renderComponent();
     });
@@ -141,19 +152,13 @@ describe("Review", () => {
     beforeEach(async () => {
       vi.clearAllMocks();
       vi.mocked(useAuthContextMock).mockReturnValue({
-        isLoggedIn: true,
-        signInStep: "",
-        setSignInStep: vi.fn(),
-        isAdmin: false,
-        user: {
-          username: "notowner",
+        ...useAuthContextMock(),
+        authState: {
+          ...useAuthContextMock().authState,
+          isLoggedIn: true,
+          isAdmin: false,
+          user: { username: "notowner", userId: "123" },
         },
-        signIn: vi.fn(),
-        signOut: vi.fn(),
-        signUp: vi.fn(),
-        confirmSignUp: vi.fn(),
-        confirmSignIn: vi.fn(),
-        resetAuthState: vi.fn(),
       });
       await renderComponent();
     });
