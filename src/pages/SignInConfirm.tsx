@@ -15,7 +15,8 @@ const SignInConfirm = () => {
   const navigate = useNavigate();
   const initialValues: ConfirmSignInInput = { challengeResponse: "" };
 
-  const { confirmSignIn, isLoggedIn } = useAuthContext();
+  const { confirmSignIn, authState } = useAuthContext();
+  const isLoggedIn = authState?.isLoggedIn;
 
   const onSubmit = async (
     values: ConfirmSignInInput,

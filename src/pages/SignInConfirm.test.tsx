@@ -2,9 +2,10 @@ import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import SignInConfirm from "./SignInConfirm";
-import { AuthContextProvider } from "../context/AuthContext";
+import { AuthStateType, AuthContextType } from "../context/AuthContext";
 import { MemoryRouter } from "react-router-dom";
 import { ReactNode } from "react";
+import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
 const { mockNavigate } = vi.hoisted(() => {
   return { mockNavigate: vi.fn() };
@@ -27,19 +28,24 @@ const { confirmSignInMock } = vi.hoisted(() => {
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
     useAuthContextMock: vi.fn().mockReturnValue({
-      isLoggedIn: false,
       signInStep: "",
       setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: null,
-      checkUser: vi.fn(),
       signIn: vi.fn(),
       signOut: vi.fn(),
       signUp: vi.fn(),
       confirmSignUp: vi.fn(),
       confirmSignIn: confirmSignInMock,
       resetAuthState: vi.fn(),
-    }),
+      intendedPath: null,
+      setIntendedPath: vi.fn(),
+      authState: {
+        isLoggedIn: false,
+        isAuthStateKnown: true,
+        user: null,
+        isAdmin: false,
+        sessionId: "123",
+      } as AuthStateType,
+    } as AuthContextType),
   };
 });
 
@@ -57,7 +63,7 @@ const renderWithAuthContext = async (component: ReactNode) => {
   await waitFor(() => {
     render(
       <MemoryRouter>
-        <AuthContextProvider>{component}</AuthContextProvider>
+        <MockAuthProvider>{component}</MockAuthProvider>
       </MemoryRouter>
     );
   });
@@ -81,13 +87,15 @@ describe("SignInConfirm", () => {
       expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
     });
 
-    test("user fills out and successfully submits the confirm sign in form", async () => {
+    test.only("user fills out and successfully submits the confirm sign in form", async () => {
       const user = userEvent.setup();
 
       const passwordInput = screen.getByLabelText(/^password$/i);
       const submitButton = screen.getByRole("button", {
         name: /change password/i,
       });
+
+      expect(submitButton).toBeInTheDocument();
 
       await user.type(passwordInput, "newpassword");
       await user.click(submitButton);
