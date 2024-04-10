@@ -11,7 +11,9 @@ const useGetUser = (userId: string | undefined) => {
   const [user, setUser] = useState<User | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const { isLoggedIn } = useAuthContext();
+  const { authState } = useAuthContext();
+  const isLoggedIn = authState?.isLoggedIn;
+  const isAuthStateKnown = authState?.isAuthStateKnown;
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -31,7 +33,6 @@ const useGetUser = (userId: string | undefined) => {
         })) as GraphQLResult<GetUserQuery>;
 
         const userData = result.data?.getUser as User;
-        console.log("userData: ", userData);
         if (!userData || result.errors) {
           setErrorMessage("Could not get user with ID: " + userId);
           return;
@@ -47,8 +48,8 @@ const useGetUser = (userId: string | undefined) => {
         setIsLoading(false);
       }
     };
-    fetchUser();
-  }, [userId, isLoggedIn]);
+    if (isAuthStateKnown) fetchUser();
+  }, [userId, isLoggedIn, isAuthStateKnown]);
 
   return { user, errorMessage, isLoading };
 };
