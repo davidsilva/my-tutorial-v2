@@ -1,14 +1,19 @@
 import { describe, expect, test, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { AuthContextProvider } from "../context/AuthContext";
 import { MemoryRouter } from "react-router-dom";
 import Banner from "./Banner";
 import { ReactNode } from "react";
 import { CartContextProvider } from "../context/CartContext";
+import { AuthContextType, AuthStateType } from "../context/AuthContext";
+import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
 const { mockNavigate } = vi.hoisted(() => {
   return { mockNavigate: vi.fn() };
+});
+
+const { signOutMock } = vi.hoisted(() => {
+  return { signOutMock: vi.fn().mockResolvedValue(undefined) };
 });
 
 vi.mock("react-router-dom", async () => {
@@ -24,19 +29,24 @@ vi.mock("react-router-dom", async () => {
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
     useAuthContextMock: vi.fn().mockReturnValue({
-      isLoggedIn: false,
       signInStep: "",
       setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: null,
-      checkUser: vi.fn(),
       signIn: vi.fn(),
-      signOut: vi.fn(),
+      signOut: signOutMock,
       signUp: vi.fn(),
       confirmSignUp: vi.fn(),
       confirmSignIn: vi.fn(),
       resetAuthState: vi.fn(),
-    }),
+      intendedPath: "",
+      setIntendedPath: vi.fn(),
+      authState: {
+        user: null,
+        isLoggedIn: false,
+        isAdmin: false,
+        sessionId: "1234",
+        isAuthStateKnown: false,
+      } as AuthStateType,
+    } as AuthContextType),
   };
 });
 
@@ -76,9 +86,9 @@ const renderWithAuthContext = async (component: ReactNode) => {
   await waitFor(() => {
     render(
       <MemoryRouter>
-        <AuthContextProvider>
+        <MockAuthProvider>
           <CartContextProvider>{component}</CartContextProvider>
-        </AuthContextProvider>
+        </MockAuthProvider>
       </MemoryRouter>
     );
   });
@@ -90,19 +100,24 @@ describe("Banner", () => {
       vi.clearAllMocks();
 
       vi.mocked(useAuthContextMock).mockReturnValueOnce({
-        isLoggedIn: false,
         signInStep: "",
         setSignInStep: vi.fn(),
-        isAdmin: false,
-        user: null,
-        checkUser: vi.fn(),
         signIn: vi.fn(),
-        signOut: vi.fn(),
+        signOut: signOutMock,
         signUp: vi.fn(),
         confirmSignUp: vi.fn(),
         confirmSignIn: vi.fn(),
         resetAuthState: vi.fn(),
-      });
+        intendedPath: "",
+        setIntendedPath: vi.fn(),
+        authState: {
+          user: null,
+          isLoggedIn: false,
+          isAdmin: false,
+          sessionId: "1234",
+          isAuthStateKnown: true,
+        } as AuthStateType,
+      } as AuthContextType);
 
       await renderWithAuthContext(<Banner />);
     });
@@ -115,7 +130,7 @@ describe("Banner", () => {
       expect(siteNameElement).toBeInTheDocument();
     });
 
-    test("renders Sign In and Sign Up buttons when not logged in", () => {
+    test("renders Sign In and Sign Up but not Sign Out buttons when not logged in", () => {
       const navElement = screen.getByRole("navigation");
       const withinNavElement = within(navElement);
 
@@ -158,19 +173,27 @@ describe("Banner", () => {
       vi.clearAllMocks();
 
       vi.mocked(useAuthContextMock).mockReturnValueOnce({
-        isLoggedIn: true,
         signInStep: "",
         setSignInStep: vi.fn(),
-        isAdmin: true,
-        user: null,
-        checkUser: vi.fn(),
         signIn: vi.fn(),
-        signOut: vi.fn(),
+        signOut: signOutMock,
         signUp: vi.fn(),
         confirmSignUp: vi.fn(),
         confirmSignIn: vi.fn(),
         resetAuthState: vi.fn(),
-      });
+        intendedPath: "",
+        setIntendedPath: vi.fn(),
+        authState: {
+          user: {
+            username: "testuser",
+            userId: "testuserid",
+          },
+          isLoggedIn: true,
+          isAdmin: true,
+          sessionId: "1234",
+          isAuthStateKnown: true,
+        } as AuthStateType,
+      } as AuthContextType);
 
       await renderWithAuthContext(<Banner />);
     });
@@ -192,22 +215,27 @@ describe("Banner", () => {
       vi.clearAllMocks();
 
       vi.mocked(useAuthContextMock).mockReturnValue({
-        isLoggedIn: true,
         signInStep: "",
         setSignInStep: vi.fn(),
-        isAdmin: false,
-        user: {
-          username: "testuser",
-          userId: "testuserid",
-        },
-        checkUser: vi.fn(),
         signIn: vi.fn(),
-        signOut: vi.fn(),
+        signOut: signOutMock,
         signUp: vi.fn(),
         confirmSignUp: vi.fn(),
         confirmSignIn: vi.fn(),
         resetAuthState: vi.fn(),
-      });
+        intendedPath: "",
+        setIntendedPath: vi.fn(),
+        authState: {
+          user: {
+            username: "testuser",
+            userId: "testuserid",
+          },
+          isLoggedIn: true,
+          isAdmin: false,
+          sessionId: "1234",
+          isAuthStateKnown: true,
+        } as AuthStateType,
+      } as AuthContextType);
 
       await renderWithAuthContext(<Banner />);
     });
@@ -269,8 +297,9 @@ describe("Banner", () => {
       });
       expect(signOutButton).toBeInTheDocument();
       await user.click(signOutButton);
-
-      expect(useAuthContextMock().signOut).toHaveBeenCalledTimes(1);
+      await waitFor(() => {
+        expect(signOutMock).toHaveBeenCalledTimes(1);
+      });
     });
   });
 });

@@ -9,8 +9,10 @@ import { useAuthContext } from "../context/AuthContext";
 import { CartBannerItem } from "./";
 
 const Banner = () => {
-  const { isLoggedIn, isAdmin, user, signOut } = useAuthContext();
-
+  const { authState, signOut } = useAuthContext();
+  const isLoggedIn = authState?.isLoggedIn;
+  const isAdmin = authState?.isAdmin;
+  const user = authState?.user;
   const navigate = useNavigate();
 
   const handleSignUp = () => {
