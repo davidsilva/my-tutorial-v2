@@ -1,6 +1,6 @@
 import { generateClient } from "aws-amplify/api";
 import { listProductsWithReviews } from "../graphql/customQueries";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Product as ProductComponent } from "./index";
 import { ProductWithReviews } from "../types";
 import { ListProductsWithReviewsQuery } from "../API";
@@ -12,7 +12,11 @@ const client = generateClient();
 const ListProducts = () => {
   const [products, setProducts] = useState<ProductWithReviews[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { isLoggedIn } = useAuthContext();
+  const { authState } = useAuthContext();
+  // I think I don't really need to use useRef. That was an attempt to fix
+  // an issue that was actually caused by isAuthStateKnown being incorrect.
+  const authStateRef = useRef(authState);
+  authStateRef.current = authState;
   const [sortField, setSortField] = useState<"name" | "price">("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -28,11 +32,13 @@ const ListProducts = () => {
 
   // memoize the function so it doesn't get recreated on every render
   const fetchProducts = useCallback(async () => {
+    if (!authStateRef.current?.isAuthStateKnown) return;
+
     // "iam" is for public access
     try {
       const productsData = (await client.graphql({
         query: listProductsWithReviews,
-        authMode: isLoggedIn ? "userPool" : "iam",
+        authMode: authStateRef.current.isLoggedIn ? "userPool" : "iam",
         // Fetch the reviews for each product
         variables: { limit: 1000 },
       })) as { data: ListProductsWithReviewsQuery };
@@ -59,11 +65,17 @@ const ListProducts = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoggedIn]);
+  }, []);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    if (authState?.isAuthStateKnown) {
+      fetchProducts();
+    }
+  }, [fetchProducts, authState?.isAuthStateKnown]);
+
+  useEffect(() => {
+    authStateRef.current = authState;
+  }, [authState]);
 
   const sortedProducts = [...products].sort((a, b) => {
     if (sortField === "name") {
