@@ -13,7 +13,9 @@ const UserProfile = () => {
   const { userWithReviews, errorMessage, isLoading } =
     useGetUserWithReviews(userId);
   console.log("userWithReviews: ", userWithReviews);
-  const { user: signedInUser, isLoggedIn } = useAuthContext();
+  const { authState } = useAuthContext();
+  const isLoggedIn = authState?.isLoggedIn;
+  const signedInUser = authState?.user;
   const navigate = useNavigate();
 
   if (isLoading) return <div>Loading...</div>;
