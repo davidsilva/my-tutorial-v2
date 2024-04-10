@@ -5,28 +5,32 @@ import userEvent from "@testing-library/user-event";
 import { createReview } from "../graphql/mutations";
 import { toast } from "react-toastify";
 import useGetProduct from "../hooks/useGetProduct";
-import { AuthContextProvider } from "../context/AuthContext";
+import { AuthStateType, AuthContextType } from "../context/AuthContext";
+import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
 vi.mock("aws-amplify/auth");
 
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
     useAuthContextMock: vi.fn().mockReturnValue({
-      isLoggedIn: true,
       signInStep: "",
       setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: {
-        userId: "1234",
-        username: "testuser",
-      },
       signIn: vi.fn(),
       signOut: vi.fn(),
       signUp: vi.fn(),
       confirmSignUp: vi.fn(),
       confirmSignIn: vi.fn(),
       resetAuthState: vi.fn(),
-    }),
+      intendedPath: null,
+      setIntendedPath: vi.fn(),
+      authState: {
+        isLoggedIn: true,
+        isAuthStateKnown: true,
+        user: { username: "testuser", userId: "1234" },
+        isAdmin: false,
+        sessionId: "123",
+      } as AuthStateType,
+    } as AuthContextType),
   };
 });
 
@@ -81,9 +85,9 @@ const renderAddReview = async () => {
   await waitFor(() => {
     render(
       <MemoryRouter>
-        <AuthContextProvider>
+        <MockAuthProvider>
           <AddReview />
-        </AuthContextProvider>
+        </MockAuthProvider>
       </MemoryRouter>
     );
   });
@@ -223,19 +227,17 @@ describe("AddReview - Error Handling", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    vi.mocked(useAuthContextMock).mockClear().mockReturnValueOnce({
-      isLoggedIn: false,
-      signInStep: "",
-      setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: null,
-      signIn: vi.fn(),
-      signOut: vi.fn(),
-      signUp: vi.fn(),
-      confirmSignUp: vi.fn(),
-      confirmSignIn: vi.fn(),
-      resetAuthState: vi.fn(),
-    });
+    vi.mocked(useAuthContextMock)
+      .mockClear()
+      .mockReturnValueOnce({
+        ...useAuthContextMock(),
+        authState: {
+          ...useAuthContextMock().authState,
+          isLoggedIn: false,
+          user: null,
+          isAdmin: false,
+        } as AuthStateType,
+      } as AuthContextType);
 
     vi.mocked(useGetProduct).mockImplementation((productId) => {
       if (productId === "372db325-5f72-49fa-ba8c-ab628c0ed470") {

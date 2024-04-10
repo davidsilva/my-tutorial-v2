@@ -22,7 +22,9 @@ const client = generateClient();
 const AddReview = () => {
   const { productId } = useParams<{ productId: string }>();
   const { product, isLoading } = useGetProduct(productId);
-  const { user, isLoggedIn } = useAuthContext();
+  const { authState } = useAuthContext();
+  const user = authState?.user;
+  const isLoggedIn = authState?.isLoggedIn;
 
   const {
     values,
