@@ -10,7 +10,9 @@ const useGetUserWithReviews = (userId: string | undefined) => {
     useState<GetUserWithReviewsQuery["getUser"]>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const { isLoggedIn } = useAuthContext();
+  const { authState } = useAuthContext();
+  const isLoggedIn = authState?.isLoggedIn;
+  const isAuthStateKnown = authState?.isAuthStateKnown;
 
   useEffect(() => {
     const fetchUserWithReviews = async () => {
@@ -45,8 +47,8 @@ const useGetUserWithReviews = (userId: string | undefined) => {
         setIsLoading(false);
       }
     };
-    fetchUserWithReviews();
-  }, [userId, isLoggedIn]);
+    if (isAuthStateKnown) fetchUserWithReviews();
+  }, [userId, isLoggedIn, isAuthStateKnown]);
 
   return { userWithReviews, errorMessage, isLoading };
 };
