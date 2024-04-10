@@ -1,7 +1,8 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { AuthContextProvider } from "../context/AuthContext";
+import { AuthContextType, AuthStateType } from "../context/AuthContext";
 import useGetProduct from "./useGetProduct";
 import { ReactNode } from "react";
+import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
 vi.mock("aws-amplify/auth");
 
@@ -18,18 +19,24 @@ vi.mock("aws-amplify/api", () => ({
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
     useAuthContextMock: vi.fn().mockReturnValue({
-      isLoggedIn: true,
       signInStep: "",
       setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: null,
       signIn: vi.fn(),
       signOut: vi.fn(),
       signUp: vi.fn(),
       confirmSignUp: vi.fn(),
       confirmSignIn: vi.fn(),
       resetAuthState: vi.fn(),
-    }),
+      intendedPath: null,
+      setIntendedPath: vi.fn(),
+      authState: {
+        isLoggedIn: true,
+        isAuthStateKnown: true,
+        user: { username: "testuser", userId: "123" },
+        isAdmin: false,
+        sessionId: "123",
+      } as AuthStateType,
+    } as AuthContextType),
   };
 });
 
@@ -61,7 +68,7 @@ describe("useGetProduct", () => {
     });
 
     const wrapper = ({ children }: { children?: ReactNode }) => (
-      <AuthContextProvider>{children}</AuthContextProvider>
+      <MockAuthProvider>{children}</MockAuthProvider>
     );
 
     const { result } = renderHook(
@@ -83,7 +90,7 @@ describe("useGetProduct", () => {
     });
 
     const wrapper = ({ children }: { children?: ReactNode }) => (
-      <AuthContextProvider>{children}</AuthContextProvider>
+      <MockAuthProvider>{children}</MockAuthProvider>
     );
 
     const { result } = renderHook(
@@ -100,18 +107,25 @@ describe("useGetProduct", () => {
 
   test("should return product even for anonymous user", async () => {
     vi.mocked(useAuthContextMock).mockReturnValueOnce({
-      isLoggedIn: false,
       signInStep: "",
       setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: null,
       signIn: vi.fn(),
       signOut: vi.fn(),
       signUp: vi.fn(),
       confirmSignUp: vi.fn(),
       confirmSignIn: vi.fn(),
       resetAuthState: vi.fn(),
-    });
+      intendedPath: null,
+      setIntendedPath: vi.fn(),
+      authState: {
+        isLoggedIn: false,
+        isAuthStateKnown: true,
+        user: null,
+        isAdmin: false,
+        sessionId: "123",
+      } as AuthStateType,
+    } as AuthContextType);
+
     vi.mocked(graphqlMock).mockResolvedValueOnce({
       data: {
         getProduct: mockProduct,
@@ -119,7 +133,7 @@ describe("useGetProduct", () => {
     });
 
     const wrapper = ({ children }: { children?: ReactNode }) => (
-      <AuthContextProvider>{children}</AuthContextProvider>
+      <MockAuthProvider>{children}</MockAuthProvider>
     );
 
     const { result } = renderHook(

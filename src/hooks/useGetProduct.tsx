@@ -10,7 +10,9 @@ const useGetProduct = (productId: string | undefined) => {
   const [product, setProduct] = useState<GetProductQuery["getProduct"]>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const { isLoggedIn } = useAuthContext();
+  const { authState } = useAuthContext();
+  const isLoggedIn = authState?.isLoggedIn;
+  const isAuthStateKnown = authState?.isAuthStateKnown;
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -43,8 +45,8 @@ const useGetProduct = (productId: string | undefined) => {
       }
     };
 
-    fetchProduct();
-  }, [productId, isLoggedIn]);
+    if (isAuthStateKnown) fetchProduct();
+  }, [productId, isLoggedIn, isAuthStateKnown]);
 
   return { product, errorMessage, isLoading };
 };
