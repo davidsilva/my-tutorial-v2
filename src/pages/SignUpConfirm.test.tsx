@@ -3,24 +3,30 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import SignUpConfirm from "./SignUpConfirm";
 import userEvent from "@testing-library/user-event";
-import { AuthContextProvider } from "../context/AuthContext";
+import { AuthContextType, AuthStateType } from "../context/AuthContext";
+import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
     useAuthContextMock: vi.fn().mockReturnValue({
-      isLoggedIn: false,
       signInStep: "",
       setSignInStep: vi.fn(),
-      isAdmin: true,
-      user: null,
-      checkUser: vi.fn(),
       signIn: vi.fn(),
       signOut: vi.fn(),
       signUp: vi.fn(),
       confirmSignUp: vi.fn(),
       confirmSignIn: vi.fn(),
       resetAuthState: vi.fn(),
-    }),
+      intendedPath: null,
+      setIntendedPath: vi.fn(),
+      authState: {
+        isLoggedIn: false,
+        isAuthStateKnown: true,
+        user: null,
+        isAdmin: false,
+        sessionId: "123",
+      } as AuthStateType,
+    } as AuthContextType),
   };
 });
 
@@ -55,26 +61,19 @@ describe("SignUpConfirm page", () => {
       vi.clearAllMocks();
 
       vi.mocked(useAuthContextMock).mockReturnValue({
-        isLoggedIn: false,
-        signInStep: "",
-        setSignInStep: vi.fn(),
-        isAdmin: false,
-        user: null,
-        checkUser: vi.fn(),
-        signIn: vi.fn(),
-        signOut: vi.fn(),
-        signUp: vi.fn(),
-        confirmSignUp: vi.fn(),
-        confirmSignIn: vi.fn(),
-        resetAuthState: vi.fn(),
+        ...useAuthContextMock(),
+        authState: {
+          ...useAuthContextMock().authState,
+          isLoggedIn: false,
+        },
       });
 
       await waitFor(() => {
         render(
           <MemoryRouter>
-            <AuthContextProvider>
+            <MockAuthProvider>
               <SignUpConfirm />
-            </AuthContextProvider>
+            </MockAuthProvider>
           </MemoryRouter>
         );
       });
@@ -135,26 +134,21 @@ describe("SignUpConfirm page", () => {
       vi.clearAllMocks();
 
       vi.mocked(useAuthContextMock).mockReturnValue({
-        isLoggedIn: true,
-        signInStep: "",
-        setSignInStep: vi.fn(),
-        isAdmin: false,
-        user: null,
-        checkUser: vi.fn(),
-        signIn: vi.fn(),
-        signOut: vi.fn(),
-        signUp: vi.fn(),
-        confirmSignUp: vi.fn(),
-        confirmSignIn: vi.fn(),
-        resetAuthState: vi.fn(),
+        ...useAuthContextMock(),
+        authState: {
+          ...useAuthContextMock().authState,
+          isLoggedIn: true,
+          isAdmin: false,
+          user: { username: "testuser", userId: "123" },
+        },
       });
 
       await waitFor(() => {
         render(
           <MemoryRouter>
-            <AuthContextProvider>
+            <MockAuthProvider>
               <SignUpConfirm />
-            </AuthContextProvider>
+            </MockAuthProvider>
           </MemoryRouter>
         );
       });

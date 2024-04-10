@@ -13,7 +13,8 @@ const validationSchema = yup.object().shape({
 
 const SignUpConfirm = () => {
   const { username = "" } = useParams<{ username: string }>();
-  const { confirmSignUp, isLoggedIn } = useAuthContext();
+  const { confirmSignUp, authState } = useAuthContext();
+  const isLoggedIn = authState?.isLoggedIn;
   const navigate = useNavigate();
 
   const initialValues: ConfirmSignUpInput = {
