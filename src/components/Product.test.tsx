@@ -5,17 +5,18 @@ import { MemoryRouter } from "react-router-dom";
 import Product from "./Product";
 import { Product as ProductType, Review } from "../API";
 import { archiveProduct, restoreProduct } from "../graphql/customMutations";
-import { AuthContextProvider } from "../context/AuthContext";
+import { AuthStateType, AuthContextType } from "../context/AuthContext";
 import { ReactNode } from "react";
 import { CartContextProvider } from "../context/CartContext";
+import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
 const renderWithAuthContext = async (component: ReactNode) => {
   await waitFor(() => {
     render(
       <MemoryRouter>
-        <AuthContextProvider>
+        <MockAuthProvider>
           <CartContextProvider>{component}</CartContextProvider>
-        </AuthContextProvider>
+        </MockAuthProvider>
       </MemoryRouter>
     );
   });
@@ -24,19 +25,24 @@ const renderWithAuthContext = async (component: ReactNode) => {
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
     useAuthContextMock: vi.fn().mockReturnValue({
-      isLoggedIn: false,
       signInStep: "",
       setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: null,
-      checkUser: vi.fn(),
       signIn: vi.fn(),
       signOut: vi.fn(),
       signUp: vi.fn(),
       confirmSignUp: vi.fn(),
       confirmSignIn: vi.fn(),
       resetAuthState: vi.fn(),
-    }),
+      intendedPath: null,
+      setIntendedPath: vi.fn(),
+      authState: {
+        isLoggedIn: true,
+        isAuthStateKnown: true,
+        user: { username: "testuser", userId: "123" },
+        isAdmin: false,
+        sessionId: "123",
+      } as AuthStateType,
+    } as AuthContextType),
   };
 });
 
@@ -103,20 +109,12 @@ describe("Product", () => {
   describe("render product for admin user", () => {
     beforeEach(async () => {
       vi.clearAllMocks();
-
       vi.mocked(useAuthContextMock).mockReturnValue({
-        isLoggedIn: true,
-        signInStep: "",
-        setSignInStep: vi.fn(),
-        isAdmin: true,
-        user: null,
-        checkUser: vi.fn(),
-        signIn: vi.fn(),
-        signOut: vi.fn(),
-        signUp: vi.fn(),
-        confirmSignUp: vi.fn(),
-        confirmSignIn: vi.fn(),
-        resetAuthState: vi.fn(),
+        ...useAuthContextMock(),
+        authState: {
+          ...useAuthContextMock().authState,
+          isAdmin: true,
+        },
       });
     });
 
@@ -139,7 +137,7 @@ describe("Product", () => {
       expect(mockNavigate).toHaveBeenCalledWith("/products/1/edit");
     });
 
-    test("handles archive logic when archive button is clicked", async () => {
+    test("calls graphql with archiveProduct when archive button is clicked", async () => {
       const user = userEvent.setup();
 
       await renderWithAuthContext(<Product product={mockProduct} />);
@@ -164,7 +162,7 @@ describe("Product", () => {
       ).toBeInTheDocument();
     });
 
-    test("handles restore logic when restore button is clicked", async () => {
+    test("calls graphql with restoreProduct when restore button is clicked", async () => {
       const user = userEvent.setup();
 
       const archivedProduct = {
@@ -198,26 +196,19 @@ describe("Product", () => {
       beforeEach(async () => {
         vi.clearAllMocks();
 
-        vi.mocked(useAuthContextMock).mockReset().mockReturnValue({
-          isLoggedIn: false,
-          signInStep: "",
-          setSignInStep: vi.fn(),
-          isAdmin: false,
-          user: null,
-          checkUser: vi.fn(),
-          signIn: vi.fn(),
-          signOut: vi.fn(),
-          signUp: vi.fn(),
-          confirmSignUp: vi.fn(),
-          confirmSignIn: vi.fn(),
-          resetAuthState: vi.fn(),
+        vi.mocked(useAuthContextMock).mockReturnValue({
+          ...useAuthContextMock(),
+          authState: {
+            ...useAuthContextMock().authState,
+            isLoggedIn: false,
+            isAdmin: false,
+          },
         });
 
         await renderWithAuthContext(<Product product={mockProduct} />);
       });
 
       test("renders product without edit or archive buttons", async () => {
-        screen.debug();
         const productImage = screen.getByRole("img");
         expect(productImage.getAttribute("src")).toMatch(/test-product\.jpg$/);
         expect(screen.getByLabelText("product name")).toHaveTextContent(
@@ -241,18 +232,12 @@ describe("Product", () => {
       vi.clearAllMocks();
 
       vi.mocked(useAuthContextMock).mockReturnValue({
-        isLoggedIn: true,
-        signInStep: "",
-        setSignInStep: vi.fn(),
-        isAdmin: false,
-        user: null,
-        checkUser: vi.fn(),
-        signIn: vi.fn(),
-        signOut: vi.fn(),
-        signUp: vi.fn(),
-        confirmSignUp: vi.fn(),
-        confirmSignIn: vi.fn(),
-        resetAuthState: vi.fn(),
+        ...useAuthContextMock(),
+        authState: {
+          ...useAuthContextMock().authState,
+          isAdmin: false,
+          isLoggedIn: true,
+        },
       });
 
       await renderWithAuthContext(<Product product={mockProduct} />);

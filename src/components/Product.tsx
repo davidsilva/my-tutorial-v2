@@ -18,7 +18,9 @@ const client = generateClient();
 const Product: React.FC<ProductProps> = ({ product }) => {
   const navigate = useNavigate();
   const [isArchived, setIsArchived] = useState(product.isArchived);
-  const { isLoggedIn, isAdmin } = useAuthContext();
+  const { authState } = useAuthContext();
+  const isAdmin = authState?.isAdmin;
+  const isLoggedIn = authState?.isLoggedIn;
   const { addToCart } = useCartContext();
 
   const handleEdit = () => {
@@ -47,6 +49,10 @@ const Product: React.FC<ProductProps> = ({ product }) => {
   const handleRateAndReview = () => {
     navigate(`/products/${product.id}/reviews/new`);
   };
+
+  if (!authState?.isAuthStateKnown) {
+    return null;
+  }
 
   return (
     <Card role="listitem">
