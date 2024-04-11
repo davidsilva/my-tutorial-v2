@@ -1,14 +1,25 @@
 import { useEffect, useState, useCallback } from "react";
-import { AuthError, fetchAuthSession } from "aws-amplify/auth";
+import { fetchAuthSession } from "aws-amplify/auth";
+import { AsyncProcess, AsyncProcessStatus } from "../types";
+
+interface AdminCheckResult {
+  isAdmin: boolean;
+}
+
+interface AdminCheckError {
+  message: string;
+}
 
 const useIsAdmin = () => {
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isCheckRun, setIsCheckRun] = useState(false);
+  const [adminCheck, setAdminCheck] = useState<
+    AsyncProcess<AdminCheckResult, AdminCheckError>
+  >({
+    status: AsyncProcessStatus.NONE,
+  });
 
   const checkIsAdmin = useCallback(async () => {
-    setIsLoading(true);
-    let myIsAdmin = false;
+    console.log("Checking if user is an admin. Setting to PENDING");
+    setAdminCheck({ status: AsyncProcessStatus.PENDING });
     try {
       const session = await fetchAuthSession();
       const tokens = session.tokens;
@@ -16,35 +27,42 @@ const useIsAdmin = () => {
         const groups = tokens.accessToken.payload["cognito:groups"];
         if (groups && Array.isArray(groups) && groups.includes("adminUsers")) {
           console.log("User is an admin");
-          myIsAdmin = true;
+          setAdminCheck({
+            status: AsyncProcessStatus.SUCCESS,
+            value: { isAdmin: true },
+          });
         } else {
           console.log("User is not an admin");
+          setAdminCheck({
+            status: AsyncProcessStatus.SUCCESS,
+            value: { isAdmin: false },
+          });
         }
+      } else {
+        console.log("User is not an admin");
+        setAdminCheck({
+          status: AsyncProcessStatus.SUCCESS,
+          value: { isAdmin: false },
+        });
       }
     } catch (error) {
-      if (error instanceof AuthError) {
-        console.error(`Error checking admin status: ${error.message}`);
-      } else {
-        console.error("Not an AuthError", error);
-      }
-    } finally {
-      setIsLoading(false);
-      setIsCheckRun(true);
-      setIsAdmin(myIsAdmin);
+      console.error(
+        `Error checking admin status or user cannot be an admin because not signed in: ${error}`
+      );
+      setAdminCheck({
+        status: AsyncProcessStatus.SUCCESS,
+        value: {
+          isAdmin: false,
+        },
+      });
     }
-  }, []);
-
-  const reset = useCallback(() => {
-    setIsAdmin(false);
-    setIsCheckRun(false);
-    setIsLoading(false);
   }, []);
 
   useEffect(() => {
     checkIsAdmin();
   }, [checkIsAdmin]);
 
-  return { isAdmin, checkIsAdmin, isLoading, isCheckRun, setIsCheckRun, reset };
+  return { adminCheck, checkIsAdmin };
 };
 
 export default useIsAdmin;
