@@ -23,28 +23,20 @@ const useIsAdmin = () => {
     try {
       const session = await fetchAuthSession();
       const tokens = session.tokens;
+
+      let isAdmin = false;
+
       if (tokens && Object.keys(tokens).length > 0) {
         const groups = tokens.accessToken.payload["cognito:groups"];
-        if (groups && Array.isArray(groups) && groups.includes("adminUsers")) {
-          console.log("User is an admin");
-          setAdminCheck({
-            status: AsyncProcessStatus.SUCCESS,
-            value: { isAdmin: true },
-          });
-        } else {
-          console.log("User is not an admin");
-          setAdminCheck({
-            status: AsyncProcessStatus.SUCCESS,
-            value: { isAdmin: false },
-          });
-        }
-      } else {
-        console.log("User is not an admin");
-        setAdminCheck({
-          status: AsyncProcessStatus.SUCCESS,
-          value: { isAdmin: false },
-        });
+        isAdmin = Array.isArray(groups) && groups.includes("adminUsers");
       }
+
+      setAdminCheck({
+        status: AsyncProcessStatus.SUCCESS,
+        value: { isAdmin },
+      });
+
+      console.log(`User is ${isAdmin ? "" : "not "}an admin`);
     } catch (error) {
       console.error(
         `Error checking admin status or user cannot be an admin because not signed in: ${error}`
