@@ -3,6 +3,7 @@ import { post, get, patch } from "aws-amplify/api";
 import useSession from "./useSession";
 import { describe, test, expect, vi } from "vitest";
 import { Session, User } from "../API";
+import { AsyncProcessStatus } from "../types";
 
 type SessionType = Session | null;
 
@@ -127,7 +128,7 @@ vi.mock("aws-amplify/api", () => {
         };
       }
     }),
-    patch: vi.fn().mockImplementation(({ apiName, path, options }) => {
+    patch: vi.fn().mockImplementation(({ options }) => {
       const updates = options.body;
       return {
         response: Promise.resolve({
@@ -150,7 +151,10 @@ describe("useSession", () => {
     const { result } = renderHook(() => useSession());
     await waitFor(async () => {
       await result.current.getSession(mockUser);
-      expect(result.current.session).toStrictEqual(mockSessionWithUser);
+      expect(result.current.sessionCheck).toEqual({
+        status: AsyncProcessStatus.SUCCESS,
+        value: { session: mockSessionWithUser },
+      });
       expect(get).toHaveBeenCalled();
       expect(patch).toHaveBeenCalled();
       expect(post).not.toHaveBeenCalled();
@@ -164,7 +168,10 @@ describe("useSession", () => {
     const { result } = renderHook(() => useSession());
     await waitFor(async () => {
       await result.current.getSession(null);
-      expect(result.current.session).toStrictEqual(mockSessionWithoutUser);
+      expect(result.current.sessionCheck).toEqual({
+        status: AsyncProcessStatus.SUCCESS,
+        value: { session: mockSessionWithoutUser },
+      });
       expect(get).toHaveBeenCalled();
       expect(post).toHaveBeenCalled();
       expect(patch).not.toHaveBeenCalled();
@@ -179,7 +186,10 @@ describe("useSession", () => {
     const { result } = renderHook(() => useSession());
     await waitFor(async () => {
       await result.current.getSession(mockUser);
-      expect(result.current.session).toStrictEqual(mockSessionWithUser);
+      expect(result.current.sessionCheck).toEqual({
+        status: AsyncProcessStatus.SUCCESS,
+        value: { session: mockSessionWithUser },
+      });
       expect(get).toHaveBeenCalled();
       expect(patch).toHaveBeenCalled();
       expect(post).not.toHaveBeenCalled();

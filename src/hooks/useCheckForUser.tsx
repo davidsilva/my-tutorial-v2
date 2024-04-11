@@ -1,41 +1,49 @@
 import { useState, useEffect, useCallback } from "react";
 import { AuthUser, getCurrentUser, AuthError } from "aws-amplify/auth";
+import { AsyncProcess, AsyncProcessStatus } from "../types";
+
+interface UserCheckResult {
+  user: AuthUser | null;
+}
+
+interface UserCheckError {
+  message: string;
+}
 
 const useCheckForUser = () => {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isCheckRun, setIsCheckRun] = useState(false);
+  const [userCheck, setUserCheck] = useState<
+    AsyncProcess<UserCheckResult, UserCheckError>
+  >({
+    status: AsyncProcessStatus.NONE,
+  });
 
   const checkUser = useCallback(async () => {
-    setIsLoading(true);
-    setIsCheckRun(true);
-    let currentUser: AuthUser | null = null;
+    setUserCheck({ status: AsyncProcessStatus.PENDING });
+
     try {
-      currentUser = await getCurrentUser();
+      const currentUser = await getCurrentUser();
+      setUserCheck({
+        status: AsyncProcessStatus.SUCCESS,
+        value: { user: currentUser },
+      });
     } catch (err) {
       if (err instanceof AuthError) {
         console.error(`Error checking for user: ${err.message}`);
       } else {
         console.error("Not an AuthError", err);
       }
-      currentUser = null;
-    } finally {
-      setIsLoading(false);
-      setUser(currentUser);
+      setUserCheck({
+        status: AsyncProcessStatus.SUCCESS,
+        value: { user: null },
+      });
     }
-  }, []);
-
-  const reset = useCallback(() => {
-    setUser(null);
-    setIsCheckRun(false);
-    setIsLoading(false);
   }, []);
 
   useEffect(() => {
     checkUser();
   }, [checkUser]);
 
-  return { user, checkUser, isLoading, isCheckRun, reset };
+  return { userCheck, checkUser };
 };
 
 export default useCheckForUser;

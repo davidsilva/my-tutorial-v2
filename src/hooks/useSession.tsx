@@ -3,20 +3,31 @@ import { UpdateSessionInput, Session } from "../API";
 import { post, get, patch } from "aws-amplify/api";
 import useLocalStorage from "./useLocalStorage";
 import { AuthUser } from "aws-amplify/auth";
+import { AsyncProcess, AsyncProcessStatus } from "../types";
 
 type SessionType = Session | null;
+
+interface SessionCheckResult {
+  session: SessionType;
+}
+
+interface SessionCheckError {
+  message: string;
+}
 
 const useSession = () => {
   const [localStorageSessionId, setLocalStorageSessionId] =
     useLocalStorage("sessionId");
-  const [session, setSession] = useState<SessionType>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSessionCheckRun, setIsSessionCheckRun] = useState(false);
+  const [sessionCheck, setSessionCheck] = useState<
+    AsyncProcess<SessionCheckResult, SessionCheckError>
+  >({
+    status: AsyncProcessStatus.NONE,
+  });
 
   const getSession = useCallback(
     async (user: AuthUser | null) => {
-      setIsLoading(true);
-      setIsSessionCheckRun(true);
+      setSessionCheck({ status: AsyncProcessStatus.PENDING });
+
       let sessionId = localStorageSessionId;
       let sessionData: SessionType = null;
 
@@ -62,31 +73,13 @@ const useSession = () => {
         sessionId = sessionData ? sessionData.id : null;
         setLocalStorageSessionId(sessionId);
       }
-
-      setSession(sessionData);
-      setIsLoading(false);
+      console.log("should set session status to success");
+      setSessionCheck({
+        status: AsyncProcessStatus.SUCCESS,
+        value: { session: sessionData },
+      });
     },
     [localStorageSessionId, setLocalStorageSessionId]
-  );
-
-  const updateSession = useCallback(
-    async (id: string, sessionData: UpdateSessionInput) => {
-      try {
-        const response = await patch({
-          apiName: "SessionAPI",
-          path: `/session/${id}`,
-          options: {
-            body: sessionData,
-          },
-        }).response;
-
-        const session = (await response.body.json()) as SessionType;
-        setSession(session);
-      } catch (error) {
-        console.error("Error updating session", error);
-      }
-    },
-    []
   );
 
   const deleteSession = useCallback(
@@ -108,26 +101,20 @@ const useSession = () => {
         console.error("Error deleting session", error);
       } finally {
         setLocalStorageSessionId(null);
-        setSession(null);
+        setSessionCheck({ status: AsyncProcessStatus.NONE });
       }
     },
     [setLocalStorageSessionId]
   );
 
   const reset = useCallback(() => {
-    setSession(null);
-    setIsLoading(true);
-    setIsSessionCheckRun(false);
+    setSessionCheck({ status: AsyncProcessStatus.NONE });
   }, []);
 
   return {
-    isLoading,
-    isSessionCheckRun,
-    session,
+    sessionCheck,
     getSession,
-    updateSession,
     deleteSession,
-    setIsSessionCheckRun,
     reset,
   };
 };
