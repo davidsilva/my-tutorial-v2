@@ -1,12 +1,155 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import { AuthContextProvider, useAuthContext } from "./AuthContext";
 import userEvent from "@testing-library/user-event";
 import * as awsAmplifyAuth from "aws-amplify/auth";
 import { toast } from "react-toastify";
-import { AuthError } from "aws-amplify/auth";
+import { AuthError, AuthUser } from "aws-amplify/auth";
+import { updateSession } from "../graphql/mutations";
+import { Session, User } from "../API";
+import { post, get, patch } from "aws-amplify/api";
+
+type SessionType = Session | null;
 
 vi.mock("aws-amplify/auth");
+
+const { localStorageMock } = vi.hoisted(() => {
+  let store: { [key: string]: string } = {};
+  return {
+    localStorageMock: {
+      getItem: vi.fn().mockImplementation((key: string) => store[key] || null),
+      setItem: vi.fn().mockImplementation((key: string, value: string) => {
+        store[key] = value.toString();
+      }),
+      clear: vi.fn().mockImplementation(() => {
+        store = {};
+      }),
+      removeItem: vi.fn().mockImplementation((key: string) => {
+        delete store[key];
+      }),
+    },
+  };
+});
+
+vi.mock("./useLocalStorage", () => {
+  return {
+    default: (key: string, initialValue: string | null = null) => {
+      let localStorageValue = localStorageMock.getItem(key) || initialValue;
+      const setLocalStorageValue = vi
+        .fn()
+        .mockImplementation((newValue: string) => {
+          if (newValue === null) {
+            localStorageMock.removeItem(key);
+          } else {
+            localStorageMock.setItem(key, newValue);
+          }
+          localStorageValue = newValue;
+        });
+      return [localStorageValue, setLocalStorageValue];
+    },
+  };
+});
+
+const { mockUser } = vi.hoisted(() => {
+  return {
+    mockUser: {
+      __typename: "User",
+      id: "userId123",
+      username: "testuser",
+      userId: "userId123",
+      createdAt: "2021-09-01T00:00:00.000Z",
+      updatedAt: "2021-09-01T00:00:00.000Z",
+    } as User,
+  };
+});
+
+const { mockSessionWithoutUser } = vi.hoisted(() => {
+  return {
+    mockSessionWithoutUser: {
+      __typename: "Session",
+      id: "sessionId123",
+      userId: null,
+      user: null,
+      createdAt: "2021-09-01T00:00:00.000Z",
+      updatedAt: "2021-09-01T00:00:00.000Z",
+    } as SessionType,
+  };
+});
+
+const { mockSessionWithUser } = vi.hoisted(() => {
+  return {
+    mockSessionWithUser: {
+      __typename: "Session",
+      id: "sessionId123",
+      userId: mockUser.userId,
+      user: mockUser,
+      createdAt: "2021-09-01T00:00:00.000Z",
+      updatedAt: "2021-09-01T00:00:00.000Z",
+    } as SessionType,
+  };
+});
+
+vi.mock("aws-amplify/api", async () => {
+  const awsAmplifyApi = await vi.importActual<typeof import("aws-amplify/api")>(
+    "aws-amplify/api"
+  );
+  return {
+    ...awsAmplifyApi,
+    post: vi.fn().mockImplementation(({ path }) => {
+      if (path === `/session?userId=${encodeURIComponent(mockUser.userId)}`) {
+        const mockSessionWithUserId = {
+          ...mockSessionWithoutUser,
+          user: mockUser,
+          userId: mockUser.userId,
+        };
+        return {
+          response: Promise.resolve({
+            body: {
+              json: vi.fn().mockResolvedValue(mockSessionWithUserId),
+            },
+          }),
+        };
+      } else {
+        return {
+          response: Promise.resolve({
+            body: {
+              json: vi.fn().mockResolvedValue(mockSessionWithoutUser),
+            },
+          }),
+        };
+      }
+    }),
+    get: vi.fn().mockImplementation(({ path }) => {
+      if (path === `/session/${mockSessionWithoutUser?.id}`) {
+        return {
+          response: Promise.resolve({
+            body: {
+              json: vi.fn().mockResolvedValue(mockSessionWithoutUser),
+            },
+          }),
+        };
+      } else {
+        return {
+          response: Promise.resolve({
+            body: {
+              json: vi.fn().mockResolvedValue(null),
+            },
+          }),
+        };
+      }
+    }),
+    patch: vi.fn().mockImplementation(({ options }) => {
+      const updates = options.body;
+      return {
+        response: Promise.resolve({
+          body: {
+            json: vi.fn().mockResolvedValue(updates),
+          },
+        }),
+      };
+    }),
+  };
+});
 
 const { mockNavigate } = vi.hoisted(() => {
   return { mockNavigate: vi.fn() };
@@ -32,31 +175,34 @@ vi.mock("react-toastify", () => ({
 
 const TestComponent: React.FC = () => {
   const {
-    isLoggedIn,
     signInStep,
     setSignInStep,
-    isAdmin,
-    user,
     signIn,
     signOut,
     signUp,
     confirmSignUp,
     confirmSignIn,
     resetAuthState,
+    intendedPath,
+    setIntendedPath,
+    authState,
   } = useAuthContext();
 
   useEffect(() => {
-    resetAuthState();
-  }, []);
+    console.log("authState", authState);
+  }, [authState]);
 
   return (
     <>
       <div data-testid="isLoggedIn">
-        isLoggedIn: {isLoggedIn ? "true" : "false"}
+        isLoggedIn: {authState?.isLoggedIn ? "true" : "false"}
       </div>
       <div data-testid="signInStep">signInStep: {signInStep}</div>
-      <div data-testid="isAdmin">isAdmin: {isAdmin ? "true" : "false"}</div>
-      <div data-testid="user">username: {user?.username}</div>
+      <div data-testid="isAdmin">
+        isAdmin: {authState?.isAdmin ? "true" : "false"}
+      </div>
+      <div data-testid="user">username: {authState?.user?.username}</div>
+      <div data-testid="sessionId">sessionId: {authState?.sessionId}</div>
       <div>
         <button
           onClick={() =>
@@ -109,13 +255,12 @@ const TestComponent: React.FC = () => {
   );
 };
 describe("AuthContext", () => {
-  describe("sign in with no user", () => {
+  describe("sign in (regular user)", () => {
     beforeEach(async () => {
-      vi.resetAllMocks();
+      vi.clearAllMocks();
 
-      vi.mocked(awsAmplifyAuth.getCurrentUser).mockRejectedValueOnce(undefined);
-
-      vi.mocked(awsAmplifyAuth.fetchAuthSession).mockResolvedValueOnce({
+      // mock for when user is not an admin
+      vi.mocked(awsAmplifyAuth.fetchAuthSession).mockResolvedValue({
         tokens: {
           accessToken: {
             payload: {
@@ -125,24 +270,34 @@ describe("AuthContext", () => {
         },
       });
 
-      await waitFor(() => {
-        render(
-          <AuthContextProvider>
-            <TestComponent />
-          </AuthContextProvider>
-        );
-      });
+      // eliminates warning about not waiting for state to be updated
+      await waitFor(() => {});
     });
 
     test("should call AWS signIn with correct values for the case where confirmation (password change) is not required (user is not admin)", async () => {
-      const user = userEvent.setup();
-
+      // mock for when sign-in confirmation is not required
       vi.mocked(awsAmplifyAuth.signIn).mockResolvedValueOnce({
         nextStep: {
           signInStep: "DONE",
         },
         isSignedIn: true,
       });
+
+      // used by useCheckForUser hook
+      vi.mocked(awsAmplifyAuth.getCurrentUser)
+        .mockRejectedValueOnce(undefined) // user is initially not signed in
+        .mockResolvedValue({
+          username: "testuser",
+          userId: "123456",
+        });
+
+      render(
+        <AuthContextProvider>
+          <TestComponent />
+        </AuthContextProvider>
+      );
+
+      const user = userEvent.setup();
 
       const isAdminStatus = screen.getByTestId("isAdmin");
       const signedInStatus = screen.getByTestId("isLoggedIn");
@@ -155,16 +310,28 @@ describe("AuthContext", () => {
 
       await user.click(signInButton);
 
-      expect(awsAmplifyAuth.signIn).toHaveBeenCalledWith({
-        username: "testuser",
-        password: "testpassword",
+      await waitFor(() => {
+        expect(awsAmplifyAuth.signIn).toHaveBeenCalledWith({
+          username: "testuser",
+          password: "testpassword",
+        });
       });
-
-      expect(signedInStatus).toHaveTextContent("isLoggedIn: true");
-
-      expect(isAdminStatus).toHaveTextContent("isAdmin: false");
+      await waitFor(() => {
+        expect(screen.getByTestId("isLoggedIn")).toHaveTextContent(
+          "isLoggedIn: true"
+        );
+      });
     });
+
     test("should call toast with error message if AWS signIn throws an error", async () => {
+      vi.mocked(awsAmplifyAuth.getCurrentUser).mockRejectedValue(undefined);
+
+      render(
+        <AuthContextProvider>
+          <TestComponent />
+        </AuthContextProvider>
+      );
+
       const user = userEvent.setup();
 
       vi.mocked(awsAmplifyAuth.signIn).mockRejectedValueOnce({
@@ -196,6 +363,12 @@ describe("AuthContext", () => {
     test("should navigate to /confirmsignin when signIn returns signInStep as CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED", async () => {
       const user = userEvent.setup();
 
+      render(
+        <AuthContextProvider>
+          <TestComponent />
+        </AuthContextProvider>
+      );
+
       vi.mocked(awsAmplifyAuth.signIn).mockResolvedValueOnce({
         nextStep: {
           signInStep: "CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED",
@@ -217,28 +390,31 @@ describe("AuthContext", () => {
       expect(isSignedInStatus).toHaveTextContent("isLoggedIn: false");
       expect(isAdminStatus).toHaveTextContent("isAdmin: false");
 
+      expect(toast.success).toHaveBeenCalledWith("Please set a new password.");
+
       expect(mockNavigate).toHaveBeenCalledWith("/signinconfirm");
     });
   });
 
   describe("confirm sign in", () => {
     beforeEach(async () => {
-      vi.resetAllMocks();
+      vi.clearAllMocks();
 
-      vi.mocked(awsAmplifyAuth.getCurrentUser).mockRejectedValueOnce(undefined);
+      vi.mocked(awsAmplifyAuth.getCurrentUser)
+        .mockRejectedValueOnce(undefined)
+        .mockResolvedValue({
+          username: "testuser",
+          userId: "123456",
+        });
 
-      vi.mocked(awsAmplifyAuth.getCurrentUser).mockResolvedValue({
-        username: "testuser",
-        userId: "123456",
-      });
+      render(
+        <AuthContextProvider>
+          <TestComponent />
+        </AuthContextProvider>
+      );
 
-      await waitFor(() => {
-        render(
-          <AuthContextProvider>
-            <TestComponent />
-          </AuthContextProvider>
-        );
-      });
+      // eliminates warning about not waiting for state to be updated
+      await waitFor(() => {});
     });
 
     test("should call AWS confirmSignIn with correct values and then call navigate with /", async () => {
@@ -262,23 +438,28 @@ describe("AuthContext", () => {
       expect(awsAmplifyAuth.confirmSignIn).toHaveBeenCalledWith({
         challengeResponse: "xyz",
       });
+      expect(toast.success).toHaveBeenCalledWith(
+        "Sign in confirmed successfully!"
+      );
       expect(mockNavigate).toHaveBeenCalledWith("/");
     });
   });
 
   describe("sign up", () => {
     beforeEach(async () => {
-      vi.resetAllMocks();
+      vi.clearAllMocks();
 
-      vi.mocked(awsAmplifyAuth.getCurrentUser).mockRejectedValueOnce(undefined);
+      // Signing up doesn't sign user in
+      vi.mocked(awsAmplifyAuth.getCurrentUser).mockRejectedValue(undefined);
 
-      await waitFor(() => {
-        render(
-          <AuthContextProvider>
-            <TestComponent />
-          </AuthContextProvider>
-        );
-      });
+      render(
+        <AuthContextProvider>
+          <TestComponent />
+        </AuthContextProvider>
+      );
+
+      // eliminates warning about not waiting for state to be updated
+      await waitFor(() => {});
     });
 
     test("should call AWS signUp with correct values and then call navigate with /signupconfirm/${username}", async () => {
@@ -349,15 +530,14 @@ describe("AuthContext", () => {
 
   describe("sign up confirmation", () => {
     beforeEach(async () => {
-      vi.resetAllMocks();
+      vi.clearAllMocks();
 
-      await waitFor(() => {
-        render(
-          <AuthContextProvider>
-            <TestComponent />
-          </AuthContextProvider>
-        );
-      });
+      render(
+        <AuthContextProvider>
+          <TestComponent />
+        </AuthContextProvider>
+      );
+      await waitFor(() => {});
     });
 
     test("should call AWS confirmSignUp with correct values and then call navigate with /signin", async () => {
@@ -382,6 +562,7 @@ describe("AuthContext", () => {
         username: "testuser",
         confirmationCode: "123456",
       });
+      expect(toast.success).toHaveBeenCalledWith("Sign up complete!");
       expect(mockNavigate).toHaveBeenCalledWith("/signin");
     });
 
@@ -413,15 +594,14 @@ describe("AuthContext", () => {
 
   describe("sign out", () => {
     beforeEach(async () => {
-      vi.resetAllMocks();
+      vi.clearAllMocks();
 
-      await waitFor(() => {
-        render(
-          <AuthContextProvider>
-            <TestComponent />
-          </AuthContextProvider>
-        );
-      });
+      render(
+        <AuthContextProvider>
+          <TestComponent />
+        </AuthContextProvider>
+      );
+      await waitFor(() => {});
     });
 
     test("should call AWS signOut with correct values and then call navigate with /", async () => {
@@ -435,16 +615,28 @@ describe("AuthContext", () => {
 
       await user.click(signOutButton);
 
-      expect(awsAmplifyAuth.signOut).toHaveBeenCalledWith();
+      expect(awsAmplifyAuth.signOut).toHaveBeenCalled();
+      expect(toast.success).toHaveBeenCalledWith("Sign out complete!");
       expect(mockNavigate).toHaveBeenCalledWith("/");
     });
   });
 
-  describe("sign in, user is admin", () => {
+  describe("sign in, user is admin, session exists", () => {
     beforeEach(async () => {
-      vi.resetAllMocks();
+      vi.clearAllMocks();
 
-      vi.mocked(awsAmplifyAuth.getCurrentUser).mockRejectedValueOnce(undefined);
+      await waitFor(() => {});
+    });
+
+    test("should call AWS signIn for user as admin, causing isAdmin to be set to true", async () => {
+      const user = userEvent.setup();
+
+      vi.mocked(awsAmplifyAuth.getCurrentUser)
+        .mockRejectedValueOnce(undefined)
+        .mockResolvedValue({
+          username: "testuser",
+          userId: "123456",
+        });
 
       vi.mocked(awsAmplifyAuth.fetchAuthSession).mockResolvedValue({
         tokens: {
@@ -463,17 +655,11 @@ describe("AuthContext", () => {
         isSignedIn: true,
       });
 
-      await waitFor(() => {
-        render(
-          <AuthContextProvider>
-            <TestComponent />
-          </AuthContextProvider>
-        );
-      });
-    });
-
-    test("should call AWS signIn for user as admin, causing isAdmin to be set to true", async () => {
-      const user = userEvent.setup();
+      render(
+        <AuthContextProvider>
+          <TestComponent />
+        </AuthContextProvider>
+      );
 
       const isAdminStatus = screen.getByTestId("isAdmin");
       const signedInStatus = screen.getByTestId("isLoggedIn");
@@ -492,11 +678,36 @@ describe("AuthContext", () => {
         password: "testpassword",
       });
 
-      await waitFor(() => {
-        expect(signedInStatus).toHaveTextContent("isLoggedIn: true");
+      expect(signedInStatus).toHaveTextContent("isLoggedIn: true");
 
-        expect(isAdminStatus).toHaveTextContent("isAdmin: true");
-      });
+      expect(isAdminStatus).toHaveTextContent("isAdmin: true");
     });
+  });
+
+  describe("checkUser", () => {
+    beforeEach(async () => {});
+    test.todo(
+      "if the user is anonymous, and a session id is not in local storage, a session should be created and the session id should be stored in local storage",
+      async () => {
+        // createSession should be called
+        // mockLocalStorage.setItem should be called with "sessionId" and the session id
+        // mockLocalStorage.setItem should be called with "isLoggedIn" and "true"
+      }
+    );
+
+    test.todo(
+      "is the user is signed in, there should be a session id in local storage, and a session should exist in the database",
+      async () => {
+        // createSession should not be called
+        // updateSession should be called
+      }
+    );
+
+    test.todo(
+      "what if user is signed in, but there is no session id in local storage?",
+      async () => {
+        // there might be a session in the database... if there is, we could get the session id from there and save it in local storage. If there isn't, we should create a session and save the session id in local storage.
+      }
+    );
   });
 });

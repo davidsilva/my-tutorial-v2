@@ -143,7 +143,10 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
       adminCheck.status === AsyncProcessStatus.SUCCESS &&
       sessionCheck.status === AsyncProcessStatus.SUCCESS
     ) {
-      console.log("Setting authState isAuthStateKnown to true");
+      console.log(
+        "Setting authState isAuthStateKnown to true userCheck",
+        userCheck
+      );
       setAuthState((prevState) => ({
         ...prevState,
         isLoggedIn: !!userCheck.value.user,
@@ -152,7 +155,13 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
         isAuthStateKnown: true,
       }));
     }
-  }, [userCheck.status, adminCheck.status, sessionCheck.status]);
+  }, [userCheck, adminCheck, sessionCheck]);
+
+  useEffect(() => {
+    if (!authState.isAuthStateKnown) {
+      checkUser();
+    }
+  }, [authState.isAuthStateKnown, checkUser]);
 
   const resetChecks = () => {
     console.log("Resetting checks");
@@ -160,8 +169,6 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
       ...prevState,
       isAuthStateKnown: false,
     }));
-    checkUser();
-    checkIsAdmin();
   };
 
   const resetAuthState = () => {
@@ -201,7 +208,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     } catch (error) {
       // NotAuthorizedException: Incorrect username or password.
       const authError = error as AuthError;
-      await checkUser();
+      // await checkUser();
       toast.error(`There was a problem signing you in: ${authError.message}`);
       console.error("error signing in", error);
     }
@@ -225,6 +232,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
       }));
       setSignInStep(nextStep.signInStep);
       if (nextStep.signInStep === "DONE") {
+        toast.success("Sign in confirmed successfully!");
         navigate("/");
       }
     } catch (error) {
@@ -250,6 +258,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
         await deleteSession(sessionId);
       }
       resetChecks();
+      toast.success("Sign out complete!");
       navigate("/");
     } catch (error) {
       const authError = error as AuthError;

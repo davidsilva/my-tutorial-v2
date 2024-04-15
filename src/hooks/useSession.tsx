@@ -36,6 +36,7 @@ const useSession = () => {
           apiName: "SessionAPI",
           path: `/session/${sessionId}`,
         });
+        console.log("Session data", result);
         const { body } = await result.response;
         sessionData = (await body.json()) as SessionType;
       }

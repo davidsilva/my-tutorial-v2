@@ -22,6 +22,7 @@ const useCheckForUser = () => {
 
     try {
       const currentUser = await getCurrentUser();
+      console.log("User is signed in", currentUser);
       setUserCheck({
         status: AsyncProcessStatus.SUCCESS,
         value: { user: currentUser },
