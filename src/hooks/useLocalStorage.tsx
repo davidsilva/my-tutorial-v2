@@ -9,6 +9,7 @@ const useLocalStorage = (
   key: string,
   initialValue: string | null = null
 ): UseLocalStorageReturn => {
+  console.log("Real useLocalStorage called");
   const [value, setValue] = useState<string | null>(() => {
     const storedValue = window.localStorage.getItem(key);
     return storedValue !== null ? storedValue : initialValue;

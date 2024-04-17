@@ -18,7 +18,7 @@ const useIsAdmin = () => {
   });
 
   const checkIsAdmin = useCallback(async () => {
-    console.log("Checking if user is an admin. Setting to PENDING");
+    // console.log("Checking if user is an admin. Setting to PENDING");
     setAdminCheck({ status: AsyncProcessStatus.PENDING });
     try {
       const session = await fetchAuthSession();
@@ -36,7 +36,7 @@ const useIsAdmin = () => {
         value: { isAdmin },
       });
 
-      console.log(`User is ${isAdmin ? "" : "not "}an admin`);
+      // console.log(`User is ${isAdmin ? "" : "not "}an admin`);
     } catch (error) {
       console.error(
         `Error checking admin status or user cannot be an admin because not signed in: ${error}`

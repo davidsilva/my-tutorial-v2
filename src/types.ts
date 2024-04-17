@@ -1,4 +1,6 @@
-import { Product, User, Review } from "./API";
+import { Product, User, Review, Session } from "./API";
+
+export type SessionType = Session | null;
 
 export type ProductWithReviews = Product & {
   reviewCount: number;
@@ -45,6 +47,14 @@ export type AsyncProcess<T, E> =
   | AsyncProcessPending
   | AsyncProcessError<E>
   | AsyncProcessSuccess<T>;
+
+export interface SessionCheckResult {
+  session: SessionType;
+}
+
+export interface SessionCheckError {
+  message: string;
+}
 
 export type UserWithReviews = User & {
   reviews?: {

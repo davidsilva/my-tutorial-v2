@@ -3,17 +3,14 @@ import { UpdateSessionInput, Session } from "../API";
 import { post, get, patch } from "aws-amplify/api";
 import useLocalStorage from "./useLocalStorage";
 import { AuthUser } from "aws-amplify/auth";
-import { AsyncProcess, AsyncProcessStatus } from "../types";
+import {
+  AsyncProcess,
+  AsyncProcessStatus,
+  SessionCheckResult,
+  SessionCheckError,
+} from "../types";
 
 type SessionType = Session | null;
-
-interface SessionCheckResult {
-  session: SessionType;
-}
-
-interface SessionCheckError {
-  message: string;
-}
 
 const useSession = () => {
   const [localStorageSessionId, setLocalStorageSessionId] =
@@ -26,9 +23,11 @@ const useSession = () => {
 
   const getSession = useCallback(
     async (user: AuthUser | null) => {
+      console.log("getSession called");
       setSessionCheck({ status: AsyncProcessStatus.PENDING });
 
       let sessionId = localStorageSessionId;
+      console.log("sessionId", sessionId);
       let sessionData: SessionType = null;
 
       if (sessionId) {
@@ -36,9 +35,9 @@ const useSession = () => {
           apiName: "SessionAPI",
           path: `/session/${sessionId}`,
         });
-        console.log("Session data", result);
         const { body } = await result.response;
         sessionData = (await body.json()) as SessionType;
+        console.log("get called for SessionAPI", sessionData);
       }
 
       if (user?.userId && sessionData && sessionData.userId !== user?.userId) {
@@ -57,6 +56,7 @@ const useSession = () => {
           // The response only contains properties that are updated, e.g., userId and updatedAt.
           const updates = (await response.body.json()) as Partial<SessionType>;
           sessionData = { ...sessionData, ...updates };
+          console.log("patch called sessionData", sessionData);
         } catch (error) {
           console.error("Error updating session with user", error);
         }
@@ -72,9 +72,10 @@ const useSession = () => {
         }).response;
         sessionData = (await response.body.json()) as SessionType;
         sessionId = sessionData ? sessionData.id : null;
+        console.log("post called sessionData", sessionData);
         setLocalStorageSessionId(sessionId);
       }
-      console.log("should set session status to success");
+      // console.log("should set session status to success");
       setSessionCheck({
         status: AsyncProcessStatus.SUCCESS,
         value: { session: sessionData },
@@ -97,7 +98,7 @@ const useSession = () => {
             body: sessionData,
           },
         }).response;
-        console.log("Session deleted", await response.body.json());
+        // console.log("Session deleted", await response.body.json());
       } catch (error) {
         console.error("Error deleting session", error);
       } finally {

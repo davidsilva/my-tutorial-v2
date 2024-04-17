@@ -92,12 +92,13 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   const { adminCheck, checkIsAdmin } = useIsAdmin();
   const { userCheck, checkUser } = useCheckForUser();
   const { sessionCheck, getSession, deleteSession } = useSession();
+  console.log("sessionCheck just returned from useSession", sessionCheck);
 
   // Start off by calling checkUser -- unless it is already in
   // PENDING or SUCCESS state.
   useEffect(() => {
     if (userCheck.status === AsyncProcessStatus.NONE) {
-      console.log("Calling checkUser");
+      // console.log("Calling checkUser");
       checkUser();
     }
   }, [checkUser, userCheck.status]);
@@ -105,15 +106,16 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   // If useCheckForUser is in SUCCESS state, then call getSession(user).
   useEffect(() => {
     if (userCheck.status === AsyncProcessStatus.SUCCESS) {
-      console.log("Calling getSession");
+      // console.log("Calling getSession");
       getSession(userCheck.value.user);
     }
   }, [userCheck, getSession]);
 
   // if useSession is in SUCCESS state, then set the sessionId in authState.
   useEffect(() => {
+    console.log("sessionCheck changed", sessionCheck);
     if (sessionCheck.status === AsyncProcessStatus.SUCCESS) {
-      console.log("Setting sessionId");
+      // console.log("Setting sessionId");
       setAuthState((prevState) => ({
         ...prevState,
         sessionId: sessionCheck.value.session?.id,
@@ -125,28 +127,28 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   // then call checkIsAdmin.
   useEffect(() => {
     if (userCheck.status === AsyncProcessStatus.SUCCESS) {
-      console.log("Calling checkIsAdmin");
+      // console.log("Calling checkIsAdmin");
       checkIsAdmin();
     }
   }, [userCheck, checkIsAdmin]);
 
   // If we have a SUCCESS state for useCheckForUser, useIsAdmin, and useSession, then set isAuthStateKnown to true.
   useEffect(() => {
-    console.log(
-      "Checking if all checks are complete",
-      userCheck.status,
-      adminCheck.status,
-      sessionCheck.status
-    );
+    // console.log(
+    //   "Checking if all checks are complete",
+    //   userCheck.status,
+    //   adminCheck.status,
+    //   sessionCheck.status
+    // );
     if (
       userCheck.status === AsyncProcessStatus.SUCCESS &&
       adminCheck.status === AsyncProcessStatus.SUCCESS &&
       sessionCheck.status === AsyncProcessStatus.SUCCESS
     ) {
-      console.log(
-        "Setting authState isAuthStateKnown to true userCheck",
-        userCheck
-      );
+      // console.log(
+      //   "Setting authState isAuthStateKnown to true userCheck",
+      //   userCheck
+      // );
       setAuthState((prevState) => ({
         ...prevState,
         isLoggedIn: !!userCheck.value.user,
@@ -164,7 +166,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   }, [authState.isAuthStateKnown, checkUser]);
 
   const resetChecks = () => {
-    console.log("Resetting checks");
+    // console.log("Resetting checks");
     setAuthState((prevState) => ({
       ...prevState,
       isAuthStateKnown: false,
@@ -172,7 +174,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   };
 
   const resetAuthState = () => {
-    console.log("Resetting authState");
+    // console.log("Resetting authState");
     setSignInStep(defaultState.signInStep);
     setAuthState({
       isLoggedIn: false,
@@ -188,7 +190,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     const { username, password } = values;
 
     try {
-      console.log("SIGNING IN");
+      // console.log("SIGNING IN");
       const result = await awsSignIn({ username, password });
       const nextStep = result.nextStep;
 
@@ -249,11 +251,11 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   };
 
   const signOut = async (navigate: NavigateFunction) => {
-    console.log("SIGNING OUT");
+    // console.log("SIGNING OUT");
     const sessionId = authState.sessionId;
     try {
       await awsSignOut();
-      console.log("REMOVING SESSION");
+      // console.log("REMOVING SESSION");
       if (sessionId) {
         await deleteSession(sessionId);
       }
