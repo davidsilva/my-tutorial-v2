@@ -20,34 +20,23 @@ vi.mock("react-router-dom", async () => {
 });
 
 const { signOutMock } = vi.hoisted(() => {
-  return { signOutMock: vi.fn().mockResolvedValue({}) };
-});
-
-const { useAuthContextMock } = vi.hoisted(() => {
   return {
-    useAuthContextMock: vi.fn().mockReturnValue({
-      isLoggedIn: false,
-      signInStep: "",
-      setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: null,
-      signIn: vi.fn(),
-      signOut: signOutMock,
-      signUp: vi.fn(),
-      confirmSignUp: vi.fn(),
-      confirmSignIn: vi.fn(),
-      resetAuthState: vi.fn(),
+    signOutMock: vi.fn().mockImplementation(() => {
+      return Promise.resolve({});
     }),
   };
 });
 
-vi.mock("../context/AuthContext", async () => {
-  const actual = await import("../context/AuthContext");
-  return {
-    ...actual,
-    useAuthContext: useAuthContextMock,
-  };
-});
+/* 
+We test the actual signOut functionality in the AuthContext tests, so here we're just asserting that *a* signOut function from a mock AuthContext is called.
+ */
+vi.mock("../context/AuthContext", async () => ({
+  AuthContextProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+  useAuthContext: () => ({
+    signOut: signOutMock,
+  }),
+}));
 
 vi.mock("aws-amplify/auth");
 

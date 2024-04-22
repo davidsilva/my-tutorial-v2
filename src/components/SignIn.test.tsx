@@ -24,26 +24,16 @@ const { signInMock } = vi.hoisted(() => {
   return { signInMock: vi.fn().mockResolvedValue({}) };
 });
 
-vi.mock("../context/AuthContext", async () => {
-  const actual = await import("../context/AuthContext");
-  return {
-    ...actual,
-    useAuthContext: vi.fn(() => ({
-      isLoggedIn: false,
-      signInStep: "",
-      setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: null,
-      checkUser: vi.fn(),
-      signIn: signInMock,
-      signOut: vi.fn(),
-      signUp: vi.fn(),
-      confirmSignUp: vi.fn(),
-      confirmSignIn: vi.fn(),
-      resetAuthState: vi.fn(),
-    })),
-  };
-});
+/* 
+We test the actual signIn functionality in the AuthContext tests, so here we're just asserting that *a* signIn function from a mock AuthContext is called.
+ */
+vi.mock("../context/AuthContext", async () => ({
+  AuthContextProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+  useAuthContext: () => ({
+    signIn: signInMock,
+  }),
+}));
 
 vi.mock("aws-amplify/auth");
 
