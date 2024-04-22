@@ -81,15 +81,16 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
+/* 
+CartBannerItem doesn't need AuthContext (at least for now), so I'm not wrapping it with AuthContextProvider
+ */
 const renderComponent = async () => {
   await waitFor(() => {
     render(
       <MemoryRouter>
-        <AuthContextProvider>
-          <CartContextProvider>
-            <CartBannerItem />
-          </CartContextProvider>
-        </AuthContextProvider>
+        <CartContextProvider>
+          <CartBannerItem />
+        </CartContextProvider>
       </MemoryRouter>
     );
   });
