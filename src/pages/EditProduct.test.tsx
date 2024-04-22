@@ -5,7 +5,6 @@ import { updateProduct } from "../graphql/mutations";
 import EditProduct from "./EditProduct";
 import useGetProduct from "../hooks/useGetProduct";
 import { toast } from "react-toastify";
-import { AuthContextProvider } from "../context/AuthContext";
 
 vi.mock("react-router-dom", async () => {
   const router = await vi.importActual<typeof import("react-router-dom")>(
@@ -116,20 +115,16 @@ const fillInForm = async (
   await user.type(priceInput, price);
 };
 
-const renderEditProduct = async () => {
-  await waitFor(() => {
-    render(
-      <MemoryRouter>
-        <AuthContextProvider>
-          <EditProduct />
-        </AuthContextProvider>
-      </MemoryRouter>
-    );
-  });
+const renderEditProduct = () => {
+  render(
+    <MemoryRouter>
+      <EditProduct />
+    </MemoryRouter>
+  );
 };
 
 describe("EditProduct", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
 
     vi.mocked(useParams).mockReturnValue({
@@ -169,6 +164,7 @@ describe("EditProduct", () => {
     patchMock.mockResolvedValue(response);
 
     renderEditProduct();
+    await waitFor(() => {});
   });
 
   test("renders EditProduct page, showing form containing test data", async () => {
@@ -245,6 +241,7 @@ describe("EditProduct error handling: can't get product", () => {
     patchMock.mockResolvedValue(response);
 
     renderEditProduct();
+    await waitFor(() => {});
   });
 
   test("displays an alert message if getting the product fails, e.g., the product doesn't exist", async () => {
@@ -285,6 +282,7 @@ describe("EditProduct error handling: can't update product", () => {
     patchMock.mockRejectedValue(new Error("An error occurred"));
 
     renderEditProduct();
+    await waitFor(() => {});
   });
 
   test("displays an alert message if updating the product fails", async () => {
