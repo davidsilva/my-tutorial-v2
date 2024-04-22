@@ -4,7 +4,6 @@ import { MemoryRouter } from "react-router-dom";
 import CartBannerItem from "./CartBannerItem";
 import { CartItem } from "../context/CartContext";
 import userEvent from "@testing-library/user-event";
-import { AuthContextProvider } from "../context/AuthContext";
 
 const { mockCartItems } = vi.hoisted(() => {
   return {
