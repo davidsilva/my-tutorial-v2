@@ -16,7 +16,7 @@ import { toast } from "react-toastify";
 import useIsAdmin from "../hooks/useIsAdmin";
 import useSession from "../hooks/useSession";
 import useCheckForUser from "../hooks/useCheckForUser";
-import { AsyncProcess, AsyncProcessStatus } from "../types";
+import { AsyncProcessStatus } from "../types";
 
 type AuthContextProviderProps = {
   children: React.ReactNode;
@@ -92,30 +92,25 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   const { adminCheck, checkIsAdmin } = useIsAdmin();
   const { userCheck, checkUser } = useCheckForUser();
   const { sessionCheck, getSession, deleteSession } = useSession();
-  console.log("sessionCheck just returned from useSession", sessionCheck);
 
   // Start off by calling checkUser -- unless it is already in
   // PENDING or SUCCESS state.
   useEffect(() => {
     if (userCheck.status === AsyncProcessStatus.NONE) {
-      // console.log("Calling checkUser");
       checkUser();
     }
-  }, [checkUser, userCheck.status]);
+  }, [authState.isAuthStateKnown, checkUser, userCheck.status]);
 
   // If useCheckForUser is in SUCCESS state, then call getSession(user).
   useEffect(() => {
     if (userCheck.status === AsyncProcessStatus.SUCCESS) {
-      // console.log("Calling getSession");
       getSession(userCheck.value.user);
     }
   }, [userCheck, getSession]);
 
   // if useSession is in SUCCESS state, then set the sessionId in authState.
   useEffect(() => {
-    console.log("sessionCheck changed", sessionCheck);
     if (sessionCheck.status === AsyncProcessStatus.SUCCESS) {
-      // console.log("Setting sessionId");
       setAuthState((prevState) => ({
         ...prevState,
         sessionId: sessionCheck.value.session?.id,
@@ -123,32 +118,24 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     }
   }, [sessionCheck]);
 
-  // if useCheckForUser is in SUCCESS state and the user is not null,
-  // then call checkIsAdmin.
+  /* 
+  If useCheckForUser is in SUCCESS state and the user is not null, then call checkIsAdmin.
+  */
   useEffect(() => {
     if (userCheck.status === AsyncProcessStatus.SUCCESS) {
-      // console.log("Calling checkIsAdmin");
       checkIsAdmin();
     }
   }, [userCheck, checkIsAdmin]);
 
-  // If we have a SUCCESS state for useCheckForUser, useIsAdmin, and useSession, then set isAuthStateKnown to true.
+  /*
+    If we have a SUCCESS state for useCheckForUser, useIsAdmin, and useSession, then set isAuthStateKnown to true.
+  */
   useEffect(() => {
-    // console.log(
-    //   "Checking if all checks are complete",
-    //   userCheck.status,
-    //   adminCheck.status,
-    //   sessionCheck.status
-    // );
     if (
       userCheck.status === AsyncProcessStatus.SUCCESS &&
       adminCheck.status === AsyncProcessStatus.SUCCESS &&
       sessionCheck.status === AsyncProcessStatus.SUCCESS
     ) {
-      // console.log(
-      //   "Setting authState isAuthStateKnown to true userCheck",
-      //   userCheck
-      // );
       setAuthState((prevState) => ({
         ...prevState,
         isLoggedIn: !!userCheck.value.user,
@@ -159,6 +146,9 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     }
   }, [userCheck, adminCheck, sessionCheck]);
 
+  /*
+    When authState is not known (as after resetChecks is called), we want to know it. So, we call checkUser.
+  */
   useEffect(() => {
     if (!authState.isAuthStateKnown) {
       checkUser();
@@ -166,7 +156,6 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   }, [authState.isAuthStateKnown, checkUser]);
 
   const resetChecks = () => {
-    // console.log("Resetting checks");
     setAuthState((prevState) => ({
       ...prevState,
       isAuthStateKnown: false,
@@ -174,7 +163,6 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   };
 
   const resetAuthState = () => {
-    // console.log("Resetting authState");
     setSignInStep(defaultState.signInStep);
     setAuthState({
       isLoggedIn: false,
@@ -190,7 +178,6 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     const { username, password } = values;
 
     try {
-      // console.log("SIGNING IN");
       const result = await awsSignIn({ username, password });
       const nextStep = result.nextStep;
 
@@ -210,9 +197,8 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     } catch (error) {
       // NotAuthorizedException: Incorrect username or password.
       const authError = error as AuthError;
-      // await checkUser();
       toast.error(`There was a problem signing you in: ${authError.message}`);
-      console.error("error signing in", error);
+      // console.error("error signing in", error);
     }
   };
 
@@ -246,17 +232,16 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
       toast.error(
         `There was a problem confirming your sign in: ${authError.message}`
       );
-      console.error("error confirming sign in", error);
+      // console.error("error confirming sign in", error);
     }
   };
 
   const signOut = async (navigate: NavigateFunction) => {
-    // console.log("SIGNING OUT");
     const sessionId = authState.sessionId;
     try {
       await awsSignOut();
-      // console.log("REMOVING SESSION");
       if (sessionId) {
+        // Soft-delete the session.
         await deleteSession(sessionId);
       }
       resetChecks();
@@ -265,7 +250,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     } catch (error) {
       const authError = error as AuthError;
       toast.error(`There was a problem signing you out: ${authError.message}`);
-      console.error("could not sign out", authError);
+      // console.error("could not sign out", authError);
     }
   };
 
@@ -285,7 +270,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
       });
       navigate(`/signupconfirm/${username}`);
     } catch (error) {
-      console.error("could not sign up", error);
+      // console.error("could not sign up", error);
       if (error instanceof AuthError) {
         toast.error(`There was a problem signing you up: ${error.message}`);
       }
@@ -312,7 +297,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
           `There was a problem confirming your sign up: ${error.message}`
         );
       }
-      console.error("error confirming sign up", error);
+      // console.error("error confirming sign up", error);
     }
   };
 

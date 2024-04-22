@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { AuthUser, getCurrentUser, AuthError } from "aws-amplify/auth";
+import { AuthUser, getCurrentUser } from "aws-amplify/auth";
 import { AsyncProcess, AsyncProcessStatus } from "../types";
 
 interface UserCheckResult {
@@ -22,17 +22,11 @@ const useCheckForUser = () => {
 
     try {
       const currentUser = await getCurrentUser();
-      // console.log("User is signed in", currentUser);
       setUserCheck({
         status: AsyncProcessStatus.SUCCESS,
         value: { user: currentUser },
       });
     } catch (err) {
-      if (err instanceof AuthError) {
-        console.error(`Error checking for user: ${err.message}`);
-      } else {
-        console.error("Not an AuthError", err);
-      }
       setUserCheck({
         status: AsyncProcessStatus.SUCCESS,
         value: { user: null },

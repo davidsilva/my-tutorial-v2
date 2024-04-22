@@ -1,13 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import { AuthContextProvider, useAuthContext } from "./AuthContext";
 import userEvent from "@testing-library/user-event";
 import * as awsAmplifyAuth from "aws-amplify/auth";
 import { toast } from "react-toastify";
-import { AuthError, AuthUser } from "aws-amplify/auth";
-import { updateSession } from "../graphql/mutations";
-import { Session, User } from "../API";
-import { post, get, patch } from "aws-amplify/api";
+import { AuthError } from "aws-amplify/auth";
+import { User } from "../API";
 import { SessionType } from "../types";
 
 vi.mock("aws-amplify/auth");
@@ -42,7 +40,7 @@ const { mockSessionWithUser } = vi.hoisted(() => {
   return {
     mockSessionWithUser: {
       __typename: "Session",
-      id: "sessionId123",
+      id: "sessionId456",
       userId: mockUser.userId,
       user: mockUser,
       createdAt: "2021-09-01T00:00:00.000Z",
@@ -83,8 +81,6 @@ vi.mock("aws-amplify/api", async () => {
     }),
     get: vi.fn().mockImplementation(({ path }) => {
       if (path === `/session/${mockSessionWithoutUser?.id}`) {
-        console.log("get called for SessionAPI path:", path);
-        // console.log("get called for SessionAPI", mockSessionWithoutUser);
         return {
           response: Promise.resolve({
             body: {
@@ -92,8 +88,15 @@ vi.mock("aws-amplify/api", async () => {
             },
           }),
         };
+      } else if (path === `/session/${mockSessionWithUser?.id}`) {
+        return {
+          response: Promise.resolve({
+            body: {
+              json: vi.fn().mockResolvedValue(mockSessionWithUser),
+            },
+          }),
+        };
       } else {
-        console.log("get called for SessionAPI path:", path);
         return {
           response: Promise.resolve({
             body: {
@@ -149,16 +152,22 @@ const TestComponent: React.FC = () => {
     confirmSignIn,
     resetAuthState,
     intendedPath,
-    setIntendedPath,
     authState,
   } = useAuthContext();
 
-  // useEffect(() => {
-  //   // console.log("authState", authState);
-  // }, [authState]);xxx
+  if (!authState?.isAuthStateKnown) {
+    return (
+      <div data-testid="isAuthStateKnown">
+        isAuthStateKnown: {authState?.isAuthStateKnown ? "true" : "false"}
+      </div>
+    );
+  }
 
   return (
     <>
+      <div data-testid="isAuthStateKnown">
+        isAuthStateKnown: {authState?.isAuthStateKnown ? "true" : "false"}
+      </div>
       <div data-testid="isLoggedIn">
         isLoggedIn: {authState?.isLoggedIn ? "true" : "false"}
       </div>
@@ -168,6 +177,9 @@ const TestComponent: React.FC = () => {
       </div>
       <div data-testid="user">username: {authState?.user?.username}</div>
       <div data-testid="sessionId">sessionId: {authState?.sessionId}</div>
+      <div data-testid="intendedPath">
+        intendedPath: {intendedPath || "undefined"}
+      </div>
       <div>
         <button
           onClick={() =>
@@ -221,7 +233,38 @@ const TestComponent: React.FC = () => {
 };
 describe("AuthContext", () => {
   describe("sign in (regular user)", () => {
+    let originalLocalStorage: Storage;
     beforeEach(async () => {
+      originalLocalStorage = window.localStorage;
+
+      /* 
+      I wasn't able to mock useSession, which is used by AuthContext, and useLocalStorage, which is used by useSession, in a way that would make the useEffects in AuthContext detect changes to the sessionCheck state variable as it progresses from NONE to PENDING to SUCCESS. So, here, I'm creating a mock version of localStorage and assigning it to window.localStorage before each test. This allows the tests to interact with this mock localStorage as if it were the real localStorage. After each test, I'm restoring the original localStorage to ensure that any changes made by the test don't persist and affect other tests.
+
+      Even if Vitest runs tests in parallel, either in separate threads or processes, there should be no interference among tests. This is because each test file runs in its own environment with its own global window object. So, when we replace window.localStorage with a mock in one test file, it doesn't affect window.localStorage in any other test files. This isolation ensures that tests do not interfere with each other, making them more reliable and predictable.
+      */
+      window.localStorage = {
+        _storage: {},
+        setItem: function (key: string, val: string) {
+          return (this._storage[key] = String(val));
+        },
+        getItem: function (key: string) {
+          return this._storage[key] || null;
+        },
+        removeItem: function (key: string) {
+          return delete this._storage[key];
+        },
+        clear: function () {
+          this._storage = {};
+        },
+        get length() {
+          return Object.keys(this._storage).length;
+        },
+        key: function (i: number) {
+          const keys = Object.keys(this._storage);
+          return keys[i] || null;
+        },
+      };
+
       vi.clearAllMocks();
 
       // mock for when user is not an admin
@@ -234,16 +277,25 @@ describe("AuthContext", () => {
           },
         },
       });
-
-      // eliminates warning about not waiting for state to be updated
-      await waitFor(() => {});
     });
 
-    test("should call AWS signIn with correct values for the case where confirmation (password change) is not required (user is not admin)", async () => {
+    afterEach(() => {
+      window.localStorage = originalLocalStorage;
+
+      vi.mocked(awsAmplifyAuth.signIn).mockReset();
+      vi.mocked(awsAmplifyAuth.getCurrentUser).mockReset();
+    });
+
+    test("should call AWS signIn with correct values for the case where confirmation (password change) is not required (and user is not admin)", async () => {
+      const user = userEvent.setup();
+
+      const mockGetCurrentUser = vi.mocked(awsAmplifyAuth.getCurrentUser);
+
       /* 
-      In the real world a session should already exist because a session is created merely by visiting the site. In useSession.test.tsx we test that scenario...
+      A session for the anonymous user already exists; it should be updated with the signed-in user's data (via PATCH). A test in useSession.test.tsx covers the scenario where there's no pre-existing session.
       */
-      window.localStorage.setItem("sessionId", "xxx");
+      const sessionId = mockSessionWithoutUser?.id || "";
+      window.localStorage.setItem("sessionId", sessionId);
 
       // mock for when sign-in confirmation is not required
       vi.mocked(awsAmplifyAuth.signIn).mockResolvedValueOnce({
@@ -253,13 +305,10 @@ describe("AuthContext", () => {
         isSignedIn: true,
       });
 
-      // used by useCheckForUser hook
-      vi.mocked(awsAmplifyAuth.getCurrentUser)
-        .mockRejectedValueOnce(undefined) // user is initially not signed in
-        .mockResolvedValue({
-          username: "testuser",
-          userId: "123456",
-        });
+      /*
+      Used by useCheckForUser hook. User is initially not signed in.
+      */
+      mockGetCurrentUser.mockRejectedValue(new Error("No user signed in"));
 
       render(
         <AuthContextProvider>
@@ -267,14 +316,24 @@ describe("AuthContext", () => {
         </AuthContextProvider>
       );
 
-      const user = userEvent.setup();
+      await waitFor(() => {
+        // we want to wait for authState.isAuthStateKnown to be true
+        expect(screen.getByTestId("isAuthStateKnown")).toHaveTextContent(
+          "isAuthStateKnown: true"
+        );
+        expect(screen.getByTestId("isLoggedIn")).toHaveTextContent(
+          "isLoggedIn: false"
+        );
+        expect(screen.getByTestId("isAdmin")).toHaveTextContent(
+          "isAdmin: false"
+        );
+        expect(screen.getByTestId("sessionId")).toHaveTextContent(sessionId);
+      });
 
-      const isAdminStatus = screen.getByTestId("isAdmin");
-      const signedInStatus = screen.getByTestId("isLoggedIn");
+      // the user is known after signing in
+      mockGetCurrentUser.mockResolvedValue(mockUser);
+
       const signInButton = screen.getByRole("button", { name: "Sign In" });
-
-      expect(signedInStatus).toHaveTextContent("isLoggedIn: false");
-      expect(isAdminStatus).toHaveTextContent("isAdmin: false");
 
       expect(signInButton).toBeInTheDocument();
 
@@ -286,20 +345,22 @@ describe("AuthContext", () => {
           password: "testpassword",
         });
       });
+
       await waitFor(() => {
         expect(screen.getByTestId("isLoggedIn")).toHaveTextContent(
           "isLoggedIn: true"
         );
       });
-      expect(get).toHaveBeenCalledWith({
-        apiName: "SessionAPI",
-        path: `/session/${mockSessionWithoutUser?.id}`,
-      });
-      expect(patch).toHaveBeenCalled();
-      expect(post).toHaveBeenCalled();
     });
 
     test("should call toast with error message if AWS signIn throws an error", async () => {
+      const user = userEvent.setup();
+
+      vi.mocked(awsAmplifyAuth.signIn).mockRejectedValueOnce({
+        message: "Incorrect username or password.",
+      });
+
+      // start out with anonymous user
       vi.mocked(awsAmplifyAuth.getCurrentUser).mockRejectedValue(undefined);
 
       render(
@@ -308,19 +369,20 @@ describe("AuthContext", () => {
         </AuthContextProvider>
       );
 
-      const user = userEvent.setup();
-
-      vi.mocked(awsAmplifyAuth.signIn).mockRejectedValueOnce({
-        message: "Incorrect username or password.",
+      await waitFor(() => {
+        // we want to wait for authState.isAuthStateKnown to be true
+        expect(screen.getByTestId("isAuthStateKnown")).toHaveTextContent(
+          "isAuthStateKnown: true"
+        );
+        expect(screen.getByTestId("isLoggedIn")).toHaveTextContent(
+          "isLoggedIn: false"
+        );
+        expect(screen.getByTestId("isAdmin")).toHaveTextContent(
+          "isAdmin: false"
+        );
       });
 
-      const isAdminStatus = screen.getByTestId("isAdmin");
-      const signedInStatus = screen.getByTestId("isLoggedIn");
       const signInButton = screen.getByRole("button", { name: "Sign In" });
-
-      expect(signedInStatus).toHaveTextContent("isLoggedIn: false");
-
-      expect(isAdminStatus).toHaveTextContent("isAdmin: false");
 
       expect(signInButton).toBeInTheDocument();
 
@@ -339,12 +401,6 @@ describe("AuthContext", () => {
     test("should navigate to /confirmsignin when signIn returns signInStep as CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED", async () => {
       const user = userEvent.setup();
 
-      render(
-        <AuthContextProvider>
-          <TestComponent />
-        </AuthContextProvider>
-      );
-
       vi.mocked(awsAmplifyAuth.signIn).mockResolvedValueOnce({
         nextStep: {
           signInStep: "CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED",
@@ -352,19 +408,42 @@ describe("AuthContext", () => {
         isSignedIn: false,
       });
 
-      const isSignedInStatus = screen.getByTestId("isLoggedIn");
-      const isAdminStatus = screen.getByTestId("isAdmin");
+      render(
+        <AuthContextProvider>
+          <TestComponent />
+        </AuthContextProvider>
+      );
 
-      expect(isSignedInStatus).toHaveTextContent("isLoggedIn: false");
-      expect(isAdminStatus).toHaveTextContent("isAdmin: false");
+      await waitFor(() => {
+        // we want to wait for authState.isAuthStateKnown to be true
+        expect(screen.getByTestId("isAuthStateKnown")).toHaveTextContent(
+          "isAuthStateKnown: true"
+        );
+        expect(screen.getByTestId("isLoggedIn")).toHaveTextContent(
+          "isLoggedIn: false"
+        );
+        expect(screen.getByTestId("isAdmin")).toHaveTextContent(
+          "isAdmin: false"
+        );
+      });
 
       const signInButton = screen.getByRole("button", { name: "Sign In" });
       expect(signInButton).toBeInTheDocument();
 
       await user.click(signInButton);
 
-      expect(isSignedInStatus).toHaveTextContent("isLoggedIn: false");
-      expect(isAdminStatus).toHaveTextContent("isAdmin: false");
+      await waitFor(() => {
+        // we want to wait for authState.isAuthStateKnown to be true
+        expect(screen.getByTestId("isAuthStateKnown")).toHaveTextContent(
+          "isAuthStateKnown: true"
+        );
+        expect(screen.getByTestId("isLoggedIn")).toHaveTextContent(
+          "isLoggedIn: false"
+        );
+        expect(screen.getByTestId("isAdmin")).toHaveTextContent(
+          "isAdmin: false"
+        );
+      });
 
       expect(toast.success).toHaveBeenCalledWith("Please set a new password.");
 
@@ -375,22 +454,11 @@ describe("AuthContext", () => {
   describe("confirm sign in", () => {
     beforeEach(async () => {
       vi.clearAllMocks();
+    });
 
-      vi.mocked(awsAmplifyAuth.getCurrentUser)
-        .mockRejectedValueOnce(undefined)
-        .mockResolvedValue({
-          username: "testuser",
-          userId: "123456",
-        });
-
-      render(
-        <AuthContextProvider>
-          <TestComponent />
-        </AuthContextProvider>
-      );
-
-      // eliminates warning about not waiting for state to be updated
-      await waitFor(() => {});
+    afterEach(() => {
+      vi.mocked(awsAmplifyAuth.confirmSignIn).mockReset();
+      vi.mocked(awsAmplifyAuth.getCurrentUser).mockReset();
     });
 
     test("should call AWS confirmSignIn with correct values and then call navigate with /", async () => {
@@ -403,6 +471,25 @@ describe("AuthContext", () => {
         },
       });
 
+      vi.mocked(awsAmplifyAuth.getCurrentUser).mockRejectedValue(undefined);
+
+      render(
+        <AuthContextProvider>
+          <TestComponent />
+        </AuthContextProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("isAuthStateKnown")).toHaveTextContent(
+          "isAuthStateKnown: true"
+        );
+        expect(screen.getByTestId("isLoggedIn")).toHaveTextContent(
+          "isLoggedIn: false"
+        );
+      });
+
+      vi.mocked(awsAmplifyAuth.getCurrentUser).mockResolvedValue(mockUser);
+
       const confirmSignInButton = screen.getByRole("button", {
         name: "Confirm Sign In",
       });
@@ -410,6 +497,15 @@ describe("AuthContext", () => {
       expect(confirmSignInButton).toBeInTheDocument();
 
       await user.click(confirmSignInButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("isAuthStateKnown")).toHaveTextContent(
+          "isAuthStateKnown: true"
+        );
+        expect(screen.getByTestId("isLoggedIn")).toHaveTextContent(
+          "isLoggedIn: true"
+        );
+      });
 
       expect(awsAmplifyAuth.confirmSignIn).toHaveBeenCalledWith({
         challengeResponse: "xyz",
@@ -425,7 +521,9 @@ describe("AuthContext", () => {
     beforeEach(async () => {
       vi.clearAllMocks();
 
-      // Signing up doesn't sign user in
+      /*         
+        Signing up doesn't sign a user in. User can't sign up if signed in.
+        */
       vi.mocked(awsAmplifyAuth.getCurrentUser).mockRejectedValue(undefined);
 
       render(
@@ -434,8 +532,14 @@ describe("AuthContext", () => {
         </AuthContextProvider>
       );
 
-      // eliminates warning about not waiting for state to be updated
+      // Eliminates warning about not waiting for state to be updated.
+      // Only if render() is called in beforeEach.
       await waitFor(() => {});
+    });
+
+    afterEach(() => {
+      vi.mocked(awsAmplifyAuth.getCurrentUser).mockReset();
+      vi.mocked(awsAmplifyAuth.signUp).mockReset();
     });
 
     test("should call AWS signUp with correct values and then call navigate with /signupconfirm/${username}", async () => {
@@ -453,11 +557,29 @@ describe("AuthContext", () => {
         isSignUpComplete: false,
       });
 
+      await waitFor(() => {
+        expect(screen.getByTestId("isAuthStateKnown")).toHaveTextContent(
+          "isAuthStateKnown: true"
+        );
+        expect(screen.getByTestId("isLoggedIn")).toHaveTextContent(
+          "isLoggedIn: false"
+        );
+      });
+
       const signUpButton = screen.getByRole("button", { name: "Sign Up" });
 
       expect(signUpButton).toBeInTheDocument();
 
       await user.click(signUpButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("isAuthStateKnown")).toHaveTextContent(
+          "isAuthStateKnown: true"
+        );
+        expect(screen.getByTestId("isLoggedIn")).toHaveTextContent(
+          "isLoggedIn: false"
+        );
+      });
 
       expect(awsAmplifyAuth.signUp).toHaveBeenCalledWith({
         username: "testuser",
@@ -480,6 +602,12 @@ describe("AuthContext", () => {
       });
 
       vi.mocked(awsAmplifyAuth.signUp).mockRejectedValueOnce(authError);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("isAuthStateKnown")).toHaveTextContent(
+          "isAuthStateKnown: true"
+        );
+      });
 
       const signUpButton = screen.getByRole("button", { name: "Sign Up" });
 
@@ -513,7 +641,16 @@ describe("AuthContext", () => {
           <TestComponent />
         </AuthContextProvider>
       );
-      await waitFor(() => {});
+      await waitFor(() => {
+        expect(screen.getByTestId("isAuthStateKnown")).toHaveTextContent(
+          "isAuthStateKnown: true"
+        );
+      });
+    });
+
+    afterEach(() => {
+      vi.mocked(awsAmplifyAuth.confirmSignUp).mockReset();
+      vi.mocked(awsAmplifyAuth.getCurrentUser).mockReset();
     });
 
     test("should call AWS confirmSignUp with correct values and then call navigate with /signin", async () => {
@@ -569,29 +706,105 @@ describe("AuthContext", () => {
   });
 
   describe("sign out", () => {
+    /*
+      Signing out should clear the current sessionId from local storage, reset the auth state, and navigate to the home page. The session should also be soft-deleted by giving it a deletedAt timestamp.
+
+      A *new* sessionId should then be created, with the assumption that we always want to associate shopping cart contents with a user and a session.
+
+      Of course the current authState would also be reset on sign out. And cart contents would be cleared out for the now-anonymous user.
+      */
+
+    let originalLocalStorage: Storage;
+
     beforeEach(async () => {
       vi.clearAllMocks();
+
+      originalLocalStorage = window.localStorage;
+
+      window.localStorage = {
+        _storage: {},
+        setItem: function (key: string, val: string) {
+          return (this._storage[key] = String(val));
+        },
+        getItem: function (key: string) {
+          return this._storage[key] || null;
+        },
+        removeItem: function (key: string) {
+          return delete this._storage[key];
+        },
+        clear: function () {
+          this._storage = {};
+        },
+        get length() {
+          return Object.keys(this._storage).length;
+        },
+        key: function (i: number) {
+          const keys = Object.keys(this._storage);
+          return keys[i] || null;
+        },
+      };
+
+      vi.mocked(awsAmplifyAuth.signOut).mockResolvedValueOnce(undefined);
+    });
+
+    afterEach(() => {
+      window.localStorage = originalLocalStorage;
+
+      vi.mocked(awsAmplifyAuth.getCurrentUser).mockReset();
+      vi.mocked(awsAmplifyAuth.signOut).mockReset();
+    });
+
+    test("should call AWS signOut with correct values and then call navigate with /", async () => {
+      const sessionId = mockSessionWithUser?.id || "";
+      window.localStorage.setItem("sessionId", sessionId);
+
+      const user = userEvent.setup();
+
+      vi.mocked(awsAmplifyAuth.getCurrentUser).mockResolvedValue({
+        username: "testuser",
+        userId: "123456",
+      });
 
       render(
         <AuthContextProvider>
           <TestComponent />
         </AuthContextProvider>
       );
-      await waitFor(() => {});
-    });
 
-    test("should call AWS signOut with correct values and then call navigate with /", async () => {
-      const user = userEvent.setup();
-
-      vi.mocked(awsAmplifyAuth.signOut).mockResolvedValueOnce(undefined);
+      await waitFor(() => {
+        expect(screen.getByTestId("isAuthStateKnown")).toHaveTextContent(
+          "isAuthStateKnown: true"
+        );
+        expect(screen.getByTestId("sessionId")).toHaveTextContent(sessionId);
+        expect(screen.getByTestId("isLoggedIn")).toHaveTextContent(
+          "isLoggedIn: true"
+        );
+      });
 
       const signOutButton = screen.getByRole("button", { name: "Sign Out" });
 
       expect(signOutButton).toBeInTheDocument();
 
+      // Simulate anonymous user
+      vi.mocked(awsAmplifyAuth.getCurrentUser).mockRejectedValue(undefined);
+
       await user.click(signOutButton);
 
-      expect(awsAmplifyAuth.signOut).toHaveBeenCalled();
+      await waitFor(() => {
+        expect(screen.getByTestId("isAuthStateKnown")).toHaveTextContent(
+          "isAuthStateKnown: true"
+        );
+        expect(screen.getByTestId("isLoggedIn")).toHaveTextContent(
+          "isLoggedIn: false"
+        );
+        /*         
+        Should be sessionId of session without user (because user is signed out).
+        */
+        expect(screen.getByTestId("sessionId")).toHaveTextContent(
+          "sessionId123"
+        );
+      });
+
       expect(toast.success).toHaveBeenCalledWith("Sign out complete!");
       expect(mockNavigate).toHaveBeenCalledWith("/");
     });
@@ -600,29 +813,20 @@ describe("AuthContext", () => {
   describe("sign in, user is admin, session exists", () => {
     beforeEach(async () => {
       vi.clearAllMocks();
+    });
 
-      await waitFor(() => {});
+    afterEach(() => {
+      vi.mocked(awsAmplifyAuth.getCurrentUser).mockReset();
+      vi.mocked(awsAmplifyAuth.fetchAuthSession).mockReset();
+      vi.mocked(awsAmplifyAuth.signIn).mockReset();
     });
 
     test("should call AWS signIn for user as admin, causing isAdmin to be set to true", async () => {
       const user = userEvent.setup();
 
-      vi.mocked(awsAmplifyAuth.getCurrentUser)
-        .mockRejectedValueOnce(undefined)
-        .mockResolvedValue({
-          username: "testuser",
-          userId: "123456",
-        });
+      vi.mocked(awsAmplifyAuth.getCurrentUser).mockRejectedValue(undefined);
 
-      vi.mocked(awsAmplifyAuth.fetchAuthSession).mockResolvedValue({
-        tokens: {
-          accessToken: {
-            payload: {
-              "cognito:groups": ["adminUsers"],
-            },
-          },
-        },
-      });
+      vi.mocked(awsAmplifyAuth.fetchAuthSession).mockRejectedValue(undefined);
 
       vi.mocked(awsAmplifyAuth.signIn).mockResolvedValue({
         nextStep: {
@@ -637,15 +841,33 @@ describe("AuthContext", () => {
         </AuthContextProvider>
       );
 
-      const isAdminStatus = screen.getByTestId("isAdmin");
-      const signedInStatus = screen.getByTestId("isLoggedIn");
+      await waitFor(() => {
+        expect(screen.getByTestId("isAuthStateKnown")).toHaveTextContent(
+          "isAuthStateKnown: true"
+        );
+        expect(screen.getByTestId("isLoggedIn")).toHaveTextContent(
+          "isLoggedIn: false"
+        );
+        expect(screen.getByTestId("isAdmin")).toHaveTextContent(
+          "isAdmin: false"
+        );
+      });
+
       const signInButton = screen.getByRole("button", { name: "Sign In" });
 
-      expect(signedInStatus).toHaveTextContent("isLoggedIn: false");
-
-      expect(isAdminStatus).toHaveTextContent("isAdmin: false");
-
       expect(signInButton).toBeInTheDocument();
+
+      vi.mocked(awsAmplifyAuth.fetchAuthSession).mockResolvedValue({
+        tokens: {
+          accessToken: {
+            payload: {
+              "cognito:groups": ["adminUsers"],
+            },
+          },
+        },
+      });
+
+      vi.mocked(awsAmplifyAuth.getCurrentUser).mockResolvedValue(mockUser);
 
       await user.click(signInButton);
 
@@ -654,9 +876,17 @@ describe("AuthContext", () => {
         password: "testpassword",
       });
 
-      expect(signedInStatus).toHaveTextContent("isLoggedIn: true");
-
-      expect(isAdminStatus).toHaveTextContent("isAdmin: true");
+      await waitFor(() => {
+        expect(screen.getByTestId("isAuthStateKnown")).toHaveTextContent(
+          "isAuthStateKnown: true"
+        );
+        expect(screen.getByTestId("isLoggedIn")).toHaveTextContent(
+          "isLoggedIn: true"
+        );
+        expect(screen.getByTestId("isAdmin")).toHaveTextContent(
+          "isAdmin: true"
+        );
+      });
     });
   });
 });

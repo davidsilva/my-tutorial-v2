@@ -146,6 +146,7 @@ describe("useSession", () => {
     localStorageMock.clear();
     vi.clearAllMocks();
   });
+
   test("should get session corresponding to sessionId in localStorage", async () => {
     localStorageMock.setItem("sessionId", "sessionId123");
     const { result } = renderHook(() => useSession());
@@ -160,10 +161,15 @@ describe("useSession", () => {
       expect(post).not.toHaveBeenCalled();
     });
   });
-  // If there is no sessionId in localStorage, a new session should be created. The session should have a userId if the user is signed in.
+
+  /*
+   If there is no sessionId in localStorage, a new session should be created. The session should have a userId if the user is signed in.
+   */
   test("should create a new session if there is no sessionId in localStorage", async () => {
-    // post should be called. sessionId should not exist in localStorage. session should be set to the response from post.
-    // get(null) will return mockSessionWithoutUser.
+    /*     
+    post should be called. sessionId should not exist in localStorage. session should be set to the response from post.
+    get(null) will return mockSessionWithoutUser.
+    */
     expect(localStorageMock.getItem("sessionId")).toBe(null);
     const { result } = renderHook(() => useSession());
     await waitFor(async () => {
@@ -177,7 +183,10 @@ describe("useSession", () => {
       expect(patch).not.toHaveBeenCalled();
     });
   });
-  // If there is a sessionId in localStorage, but the session does not have a userId, the session should be updated with the userId of the signed-in user.
+
+  /* 
+  If there is a sessionId in localStorage, but the session does not have a userId, the session should be updated with the userId of the signed-in user. 
+  */
   test("should update the session with the userId of the signed-in user if the session does not have a userId", async () => {
     // patch should be called.
     // get() will return mockSessionWithoutUser.

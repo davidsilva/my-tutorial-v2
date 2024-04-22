@@ -8,7 +8,6 @@ vi.mock("aws-amplify/auth");
 
 describe("useIsAdmin", () => {
   test("should set adminCheck to SUCCESS, with isAdmin to true", async () => {
-    // Mock the fetchAuthSession function to return a session with admin group
     vi.mocked(fetchAuthSession).mockResolvedValueOnce({
       tokens: {
         accessToken: {
@@ -30,7 +29,6 @@ describe("useIsAdmin", () => {
   });
 
   test("should set adminCheck to SUCCESS, with isAdmin to false", async () => {
-    // Mock the fetchAuthSession function to return a session without admin group
     vi.mocked(fetchAuthSession).mockResolvedValueOnce({
       tokens: {
         accessToken: {
@@ -50,8 +48,8 @@ describe("useIsAdmin", () => {
       })
     );
   });
+
   test("should set adminCheck to SUCCESS and isAdmin to false if user is not signed in", async () => {
-    // Mock the fetchAuthSession function to throw an error
     vi.mocked(fetchAuthSession).mockRejectedValueOnce(
       new Error("User is not signed in")
     );

@@ -23,11 +23,9 @@ const useSession = () => {
 
   const getSession = useCallback(
     async (user: AuthUser | null) => {
-      console.log("getSession called");
       setSessionCheck({ status: AsyncProcessStatus.PENDING });
 
       let sessionId = localStorageSessionId;
-      console.log("sessionId", sessionId);
       let sessionData: SessionType = null;
 
       if (sessionId) {
@@ -37,7 +35,6 @@ const useSession = () => {
         });
         const { body } = await result.response;
         sessionData = (await body.json()) as SessionType;
-        console.log("get called for SessionAPI", sessionData);
       }
 
       if (user?.userId && sessionData && sessionData.userId !== user?.userId) {
@@ -53,15 +50,17 @@ const useSession = () => {
               } as Partial<SessionType>,
             },
           }).response;
-          // The response only contains properties that are updated, e.g., userId and updatedAt.
+          /* 
+          The response only contains properties that are updated, e.g., userId and updatedAt. 
+           */
           const updates = (await response.body.json()) as Partial<SessionType>;
           sessionData = { ...sessionData, ...updates };
-          console.log("patch called sessionData", sessionData);
         } catch (error) {
           console.error("Error updating session with user", error);
         }
       }
 
+      // Create a new session.
       if (!sessionData || !sessionId) {
         const path = user?.userId
           ? `/session?userId=${encodeURIComponent(user.userId)}`
@@ -72,10 +71,8 @@ const useSession = () => {
         }).response;
         sessionData = (await response.body.json()) as SessionType;
         sessionId = sessionData ? sessionData.id : null;
-        console.log("post called sessionData", sessionData);
         setLocalStorageSessionId(sessionId);
       }
-      // console.log("should set session status to success");
       setSessionCheck({
         status: AsyncProcessStatus.SUCCESS,
         value: { session: sessionData },
@@ -84,6 +81,7 @@ const useSession = () => {
     [localStorageSessionId, setLocalStorageSessionId]
   );
 
+  // Soft-delete by setting a deletedAt timestamp.
   const deleteSession = useCallback(
     async (id: string) => {
       try {
@@ -91,14 +89,13 @@ const useSession = () => {
           id,
           deletedAt: new Date().toISOString(),
         };
-        const response = await patch({
+        await patch({
           apiName: "SessionAPI",
           path: `/session/${id}`,
           options: {
             body: sessionData,
           },
         }).response;
-        // console.log("Session deleted", await response.body.json());
       } catch (error) {
         console.error("Error deleting session", error);
       } finally {

@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import useLocalStorage from "./useLocalStorage";
-import { describe, test, expect, vi } from "vitest";
+import { describe, test, expect } from "vitest";
 
 const localStorageMock: Storage = (() => {
   let store: Record<string, string> = {};
@@ -16,7 +16,7 @@ const localStorageMock: Storage = (() => {
     clear: (): void => {
       store = {};
     },
-    key: (index: number): string | null => "",
+    key: (): string | null => "",
     length: Object.keys(store).length,
   };
 })();
