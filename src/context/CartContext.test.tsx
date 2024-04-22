@@ -4,8 +4,6 @@ import { CartContextProvider, useCartContext } from "./CartContext";
 import userEvent from "@testing-library/user-event";
 import { Product } from "../API";
 import { CartItem } from "./CartContext";
-import { AuthContextProvider } from "./AuthContext";
-import { MemoryRouter } from "react-router-dom";
 
 const mockProduct: Product = {
   id: "100",
@@ -99,19 +97,12 @@ const TestComponent: React.FC = () => {
   );
 };
 
-const renderComponent = async (initialState?: CartItem[]) => {
-  // We might not need waitFor -- yet.
-  await waitFor(() => {
-    render(
-      <MemoryRouter>
-        <AuthContextProvider>
-          <CartContextProvider initialState={initialState}>
-            <TestComponent />
-          </CartContextProvider>
-        </AuthContextProvider>
-      </MemoryRouter>
-    );
-  });
+const renderComponent = (initialState?: CartItem[]) => {
+  render(
+    <CartContextProvider initialState={initialState}>
+      <TestComponent />
+    </CartContextProvider>
+  );
 };
 
 describe("CartContext", () => {
@@ -119,7 +110,8 @@ describe("CartContext", () => {
     beforeEach(async () => {
       vi.clearAllMocks();
 
-      await renderComponent();
+      renderComponent();
+      await waitFor(() => {});
     });
     test("cartItems should be empty by default", () => {
       const totalAmount = screen.getByTestId("total-amount");
@@ -179,7 +171,8 @@ describe("CartContext", () => {
     beforeEach(async () => {
       vi.clearAllMocks();
 
-      await renderComponent(mockCartItems);
+      renderComponent(mockCartItems);
+      await waitFor(() => {});
     });
     test("cartItems should be populated with initial state", () => {
       const totalAmount = screen.getByTestId("total-amount");
