@@ -5,7 +5,6 @@ import ChangePassword from "./ChangePassword";
 import userEvent from "@testing-library/user-event";
 import * as awsAmplifyAuth from "aws-amplify/auth";
 import { toast } from "react-toastify";
-import { AuthContextProvider } from "../context/AuthContext";
 
 vi.mock("aws-amplify/auth");
 
@@ -14,18 +13,6 @@ vi.mock("react-toastify", () => ({
     success: vi.fn(),
   },
 }));
-
-const renderChangePassword = async () => {
-  await waitFor(async () => {
-    render(
-      <MemoryRouter>
-        <AuthContextProvider>
-          <ChangePassword />
-        </AuthContextProvider>
-      </MemoryRouter>
-    );
-  });
-};
 
 describe("ChangePassword", () => {
   describe("success path", () => {
@@ -39,7 +26,12 @@ describe("ChangePassword", () => {
 
       vi.mocked(awsAmplifyAuth.updatePassword).mockResolvedValue();
 
-      await renderChangePassword();
+      render(
+        <MemoryRouter>
+          <ChangePassword />
+        </MemoryRouter>
+      );
+      await waitFor(() => {});
     });
 
     test("renders Change Password form", () => {
@@ -96,7 +88,12 @@ describe("ChangePassword", () => {
         message: errorMessage,
       });
 
-      await renderChangePassword();
+      render(
+        <MemoryRouter>
+          <ChangePassword />
+        </MemoryRouter>
+      );
+      await waitFor(() => {});
     });
     test("displays error message when password update fails because user entered incorrect old password", async () => {
       const user = userEvent.setup();
