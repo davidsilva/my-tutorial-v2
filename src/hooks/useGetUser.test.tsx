@@ -1,9 +1,9 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { AuthStateType, AuthContextType } from "../context/AuthContext";
+import { AuthContextProvider } from "../context/AuthContext";
 import useGetUser from "./useGetUser";
 import { ReactNode } from "react";
 import { GraphQLError } from "graphql";
-import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
+import { User } from "../API";
 
 vi.mock("aws-amplify/auth");
 
@@ -17,53 +17,30 @@ vi.mock("aws-amplify/api", () => ({
   })),
 }));
 
-const { useAuthContextMock } = vi.hoisted(() => {
+const { mockUser } = vi.hoisted(() => {
   return {
-    useAuthContextMock: vi.fn().mockReturnValue({
-      signInStep: "",
-      setSignInStep: vi.fn(),
-      signIn: vi.fn(),
-      signOut: vi.fn(),
-      signUp: vi.fn(),
-      confirmSignUp: vi.fn(),
-      confirmSignIn: vi.fn(),
-      resetAuthState: vi.fn(),
-      intendedPath: null,
-      setIntendedPath: vi.fn(),
-      authState: {
-        isLoggedIn: true,
-        isAuthStateKnown: true,
-        user: { username: "testuser", userId: "123" },
-        isAdmin: false,
-        sessionId: "123",
-      } as AuthStateType,
-    } as AuthContextType),
+    mockUser: {
+      __typename: "User",
+      id: "userId123",
+      username: "testuser",
+      userId: "userId123",
+      createdAt: "2021-09-01T00:00:00.000Z",
+      updatedAt: "2021-09-01T00:00:00.000Z",
+    } as User,
   };
 });
 
-vi.mock("../context/AuthContext", async () => {
-  const actual = await import("../context/AuthContext");
-  return {
-    ...actual,
-    useAuthContext: useAuthContextMock,
-  };
-});
-
-const mockUser = {
-  id: "bbc98375-b793-4aee-a59a-7872975cd905",
-  username: "testuser99",
-  firstName: "test",
-  lastName: "user99",
-  isArchived: null,
-  reviews: {
-    nextToken: null,
-    __typename: "ModelReviewConnection",
-  },
-  createdAt: "2024-02-09T03:05:38.899Z",
-  updatedAt: "2024-02-09T03:11:38.637Z",
-  owner: "bbc98375-b793-4aee-a59a-7872975cd905",
-  __typename: "User",
-};
+vi.mock("../context/AuthContext", async () => ({
+  AuthContextProvider: ({ children }: { children: ReactNode }) => children,
+  useAuthContext: () => ({
+    authState: {
+      isAuthStateKnown: true,
+      isLoggedIn: true,
+      user: { username: "testuser", userId: "userId123" },
+      isAdmin: false,
+    },
+  }),
+}));
 
 describe("useGetUser", () => {
   beforeEach(() => {
@@ -82,7 +59,7 @@ describe("useGetUser", () => {
 
   test("should return user for given userId", async () => {
     const wrapper = ({ children }: { children?: ReactNode }) => (
-      <MockAuthProvider>{children}</MockAuthProvider>
+      <AuthContextProvider>{children}</AuthContextProvider>
     );
 
     const { result } = renderHook(
@@ -101,7 +78,7 @@ describe("useGetUser", () => {
 
   test("should return null user and error message for invalid userId", async () => {
     const wrapper = ({ children }: { children?: ReactNode }) => (
-      <MockAuthProvider>{children}</MockAuthProvider>
+      <AuthContextProvider>{children}</AuthContextProvider>
     );
 
     const { result } = renderHook(
@@ -111,12 +88,12 @@ describe("useGetUser", () => {
       }
     );
 
-    await waitFor(() => result.current.errorMessage !== "");
-
-    expect(result.current.user).toBe(null);
-    expect(result.current.errorMessage).toBe(
-      "Error fetching user with ID bbc98375-b793-4aee-a59a-7872975cd90: User not found"
-    );
-    expect(result.current.isLoading).toBe(false);
+    await waitFor(() => {
+      expect(result.current.user).toBe(null);
+      expect(result.current.errorMessage).toBe(
+        "Error fetching user with ID bbc98375-b793-4aee-a59a-7872975cd90: User not found"
+      );
+      expect(result.current.isLoading).toBe(false);
+    });
   });
 });
