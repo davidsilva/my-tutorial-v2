@@ -3,43 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { AddProduct } from "./";
 import { MemoryRouter } from "react-router-dom";
 import { toast } from "react-toastify";
-import { AuthContextProvider } from "../context/AuthContext";
 
 vi.mock("aws-amplify/auth");
 vi.mock("aws-amplify/storage", () => ({
   uploadData: vi.fn().mockResolvedValue({ result: { key: "chucknorris.png" } }),
 }));
-
-const { useAuthContextMock } = vi.hoisted(() => {
-  return {
-    useAuthContextMock: vi.fn().mockReturnValue({
-      isLoggedIn: true,
-      signInStep: "",
-      setSignInStep: vi.fn(),
-      isAdmin: false,
-      user: {
-        userId: "1234",
-        username: "testuser",
-      },
-      signIn: vi.fn(),
-      signOut: vi.fn(),
-      signUp: vi.fn(),
-      confirmSignUp: vi.fn(),
-      confirmSignIn: vi.fn(),
-      resetAuthState: vi.fn(),
-    }),
-  };
-});
-
-vi.mock("../context/AuthContext", async () => {
-  const actual = await vi.importActual<typeof import("../context/AuthContext")>(
-    "../context/AuthContext"
-  );
-  return {
-    ...actual,
-    useAuthContext: useAuthContextMock,
-  };
-});
 
 const { graphqlMock } = vi.hoisted(() => {
   return { graphqlMock: vi.fn() };
@@ -84,18 +52,6 @@ const fillInForm = async (
   }
 };
 
-const renderAddProduct = async () => {
-  await waitFor(() => {
-    render(
-      <MemoryRouter>
-        <AuthContextProvider>
-          <AddProduct />
-        </AuthContextProvider>
-      </MemoryRouter>
-    );
-  });
-};
-
 const product = {
   name: "Test Product",
   description: "Test Description",
@@ -122,7 +78,13 @@ describe("AddProduct", () => {
 
     postMock.mockResolvedValue(response);
 
-    await renderAddProduct();
+    // Wrap with MemoryRouter because component uses Link.
+    render(
+      <MemoryRouter>
+        <AddProduct />
+      </MemoryRouter>
+    );
+    await waitFor(() => {});
   });
 
   test("renders Add Product page", async () => {
