@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import useLocalStorage from "./useLocalStorage";
 import { describe, test, expect } from "vitest";
 
@@ -53,7 +53,9 @@ describe("useLocalStorage", () => {
 
     await waitFor(() => expect(result.current[0]).toBe(initialValue));
 
-    result.current[1](newValue);
+    act(() => {
+      result.current[1](newValue);
+    });
 
     await waitFor(() => expect(result.current[0]).toBe(newValue));
     await waitFor(() => expect(localStorageMock.getItem(key)).toBe(newValue));
@@ -68,7 +70,9 @@ describe("useLocalStorage", () => {
 
     await waitFor(() => expect(result.current[0]).toBe(initialValue));
 
-    result.current[1](null);
+    act(() => {
+      result.current[1](null);
+    });
 
     await waitFor(() => expect(result.current[0]).toBe(null));
     await waitFor(() => expect(localStorageMock.getItem(key)).toBe(null));
