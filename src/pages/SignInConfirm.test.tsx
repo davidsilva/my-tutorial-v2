@@ -1,11 +1,14 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import SignInConfirm from "./SignInConfirm";
-import { AuthStateType, AuthContextType } from "../context/AuthContext";
+import {
+  AuthContextProvider,
+  AuthStateType,
+  AuthContextType,
+} from "../context/AuthContext";
 import { MemoryRouter } from "react-router-dom";
 import { ReactNode } from "react";
-import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
 const { mockNavigate } = vi.hoisted(() => {
   return { mockNavigate: vi.fn() };
@@ -39,9 +42,9 @@ const { useAuthContextMock } = vi.hoisted(() => {
       intendedPath: null,
       setIntendedPath: vi.fn(),
       authState: {
-        isLoggedIn: false,
+        isLoggedIn: true,
         isAuthStateKnown: true,
-        user: null,
+        user: { username: "testuser", userId: "1234" },
         isAdmin: false,
         sessionId: "123",
       } as AuthStateType,
@@ -49,34 +52,30 @@ const { useAuthContextMock } = vi.hoisted(() => {
   };
 });
 
-vi.mock("../context/AuthContext", async () => {
-  const actual = await import("../context/AuthContext");
-  return {
-    ...actual,
-    useAuthContext: useAuthContextMock,
-  };
-});
+vi.mock("../context/AuthContext", async () => ({
+  AuthContextProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+  useAuthContext: useAuthContextMock,
+}));
 
 vi.mock("aws-amplify/auth");
 
-const renderWithAuthContext = async (component: ReactNode) => {
-  await waitFor(() => {
-    render(
-      <MemoryRouter>
-        <MockAuthProvider>{component}</MockAuthProvider>
-      </MemoryRouter>
-    );
-  });
+const renderWithAuthContext = (component: ReactNode) => {
+  render(
+    <MemoryRouter>
+      <AuthContextProvider>{component}</AuthContextProvider>
+    </MemoryRouter>
+  );
 };
 
 describe("SignInConfirm", () => {
   describe("Success path", () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       vi.clearAllMocks();
 
       vi.mocked(confirmSignInMock).mockResolvedValue(undefined);
 
-      await renderWithAuthContext(<SignInConfirm />);
+      renderWithAuthContext(<SignInConfirm />);
     });
 
     test("renders the sign in confirm form", () => {
@@ -87,7 +86,7 @@ describe("SignInConfirm", () => {
       expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
     });
 
-    test.only("user fills out and successfully submits the confirm sign in form", async () => {
+    test("user fills out and successfully submits the confirm sign in form", async () => {
       const user = userEvent.setup();
 
       const passwordInput = screen.getByLabelText(/^password$/i);
@@ -111,15 +110,16 @@ describe("SignInConfirm", () => {
   });
 
   describe("Failure path", () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       vi.clearAllMocks();
 
       vi.mocked(confirmSignInMock).mockRejectedValue({
         message: "error",
       });
 
-      await renderWithAuthContext(<SignInConfirm />);
+      renderWithAuthContext(<SignInConfirm />);
     });
+
     test("user fills out and unsuccessfully submits the confirm sign in form", async () => {
       const user = userEvent.setup();
 

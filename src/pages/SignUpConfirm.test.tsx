@@ -1,10 +1,13 @@
 import { describe, expect, test, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import SignUpConfirm from "./SignUpConfirm";
 import userEvent from "@testing-library/user-event";
-import { AuthContextType, AuthStateType } from "../context/AuthContext";
-import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
+import {
+  AuthContextProvider,
+  AuthStateType,
+  AuthContextType,
+} from "../context/AuthContext";
 
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
@@ -20,9 +23,9 @@ const { useAuthContextMock } = vi.hoisted(() => {
       intendedPath: null,
       setIntendedPath: vi.fn(),
       authState: {
-        isLoggedIn: false,
+        isLoggedIn: true,
         isAuthStateKnown: true,
-        user: null,
+        user: { username: "testuser", userId: "1234" },
         isAdmin: false,
         sessionId: "123",
       } as AuthStateType,
@@ -30,13 +33,11 @@ const { useAuthContextMock } = vi.hoisted(() => {
   };
 });
 
-vi.mock("../context/AuthContext", async () => {
-  const actual = await import("../context/AuthContext");
-  return {
-    ...actual,
-    useAuthContext: useAuthContextMock,
-  };
-});
+vi.mock("../context/AuthContext", async () => ({
+  AuthContextProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+  useAuthContext: useAuthContextMock,
+}));
 
 vi.mock("aws-amplify/auth");
 
@@ -57,7 +58,7 @@ vi.mock("react-router-dom", async () => {
 
 describe("SignUpConfirm page", () => {
   describe("when user is not signed in", () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       vi.clearAllMocks();
 
       vi.mocked(useAuthContextMock).mockReturnValue({
@@ -68,18 +69,16 @@ describe("SignUpConfirm page", () => {
         },
       });
 
-      await waitFor(() => {
-        render(
-          <MemoryRouter>
-            <MockAuthProvider>
-              <SignUpConfirm />
-            </MockAuthProvider>
-          </MemoryRouter>
-        );
-      });
+      render(
+        <MemoryRouter>
+          <AuthContextProvider>
+            <SignUpConfirm />
+          </AuthContextProvider>
+        </MemoryRouter>
+      );
     });
 
-    test("renders sign up confirmation form", async () => {
+    test("renders sign up confirmation form", () => {
       const usernameInput = screen.getByRole("textbox", {
         name: /^username$/i,
       });
@@ -130,7 +129,7 @@ describe("SignUpConfirm page", () => {
   });
 
   describe("when user is signed in", () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       vi.clearAllMocks();
 
       vi.mocked(useAuthContextMock).mockReturnValue({
@@ -143,15 +142,13 @@ describe("SignUpConfirm page", () => {
         },
       });
 
-      await waitFor(() => {
-        render(
-          <MemoryRouter>
-            <MockAuthProvider>
-              <SignUpConfirm />
-            </MockAuthProvider>
-          </MemoryRouter>
-        );
-      });
+      render(
+        <MemoryRouter>
+          <AuthContextProvider>
+            <SignUpConfirm />
+          </AuthContextProvider>
+        </MemoryRouter>
+      );
     });
 
     test("displays warning message when user is already signed in", async () => {

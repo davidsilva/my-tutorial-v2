@@ -3,24 +3,21 @@ import { render, screen, waitFor } from "@testing-library/react";
 import Landing from "./Landing";
 import { MemoryRouter } from "react-router-dom";
 import {
-  useAuthContext,
+  AuthContextProvider,
   AuthStateType,
   AuthContextType,
 } from "../context/AuthContext";
 import { ReactNode } from "react";
 import { CartContextProvider } from "../context/CartContext";
-import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
-const renderWithAuthContext = async (component: ReactNode) => {
-  await waitFor(() => {
-    render(
-      <MemoryRouter>
-        <MockAuthProvider>
-          <CartContextProvider>{component}</CartContextProvider>
-        </MockAuthProvider>
-      </MemoryRouter>
-    );
-  });
+const renderWithAuthContext = (component: ReactNode) => {
+  render(
+    <MemoryRouter>
+      <AuthContextProvider>
+        <CartContextProvider>{component}</CartContextProvider>
+      </AuthContextProvider>
+    </MemoryRouter>
+  );
 };
 
 vi.mock("aws-amplify/api", () => {
@@ -76,20 +73,18 @@ const { useAuthContextMock } = vi.hoisted(() => {
   };
 });
 
-vi.mock("../context/AuthContext", async () => {
-  const actual = await import("../context/AuthContext");
-  return {
-    ...actual,
-    useAuthContext: useAuthContextMock,
-  };
-});
+vi.mock("../context/AuthContext", async () => ({
+  AuthContextProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+  useAuthContext: useAuthContextMock,
+}));
 
 describe("Landing", () => {
   describe("when user is logged in", () => {
     beforeEach(async () => {
       vi.clearAllMocks();
 
-      vi.mocked(useAuthContext).mockReturnValueOnce({
+      vi.mocked(useAuthContextMock).mockReturnValueOnce({
         ...useAuthContextMock(),
         authState: {
           ...useAuthContextMock().authState,
@@ -99,13 +94,15 @@ describe("Landing", () => {
         },
       });
 
-      await renderWithAuthContext(<Landing />);
+      renderWithAuthContext(<Landing />);
+      await waitFor(() => {});
     });
 
     test("renders 'Is logged in: yes' when user is logged in", async () => {
       const isLoggedInText = await screen.findByText(/Is logged in: yes/i);
       expect(isLoggedInText).toBeInTheDocument();
     });
+
     test("renders the ListProducts component when user is logged in", async () => {
       expect(
         await screen.findByRole("heading", { level: 1, name: /list products/i })
@@ -119,7 +116,7 @@ describe("Landing", () => {
     beforeEach(async () => {
       vi.clearAllMocks();
 
-      vi.mocked(useAuthContext).mockReturnValueOnce({
+      vi.mocked(useAuthContextMock).mockReturnValueOnce({
         ...useAuthContextMock(),
         authState: {
           ...useAuthContextMock().authState,
@@ -129,12 +126,15 @@ describe("Landing", () => {
         },
       });
 
-      await renderWithAuthContext(<Landing />);
+      renderWithAuthContext(<Landing />);
+      await waitFor(() => {});
     });
+
     test("renders 'Is logged in: no' when user is not logged in", () => {
       const isLoggedInText = screen.getByText(/Is logged in: no/i);
       expect(isLoggedInText).toBeInTheDocument();
     });
+
     test("renders the ListProducts component when user is not logged in", async () => {
       expect(
         await screen.findByRole("heading", { level: 1, name: /list products/i })

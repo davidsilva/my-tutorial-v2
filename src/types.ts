@@ -1,4 +1,5 @@
 import { Product, User, Review, Session } from "./API";
+import { AuthUser } from "aws-amplify/auth";
 
 export type SessionType = Session | null;
 
@@ -63,3 +64,11 @@ export type UserWithReviews = User & {
 };
 
 export type Status = "loading" | "error" | "success";
+
+export interface UserCheckResult {
+  user: AuthUser | null;
+}
+
+export interface UserCheckError {
+  message: string;
+}

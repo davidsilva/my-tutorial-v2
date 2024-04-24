@@ -1,21 +1,14 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { AuthStateType, AuthContextType } from "../context/AuthContext";
+import {
+  AuthContextProvider,
+  AuthStateType,
+  AuthContextType,
+} from "../context/AuthContext";
 import useGetUserWithReviews from "./useGetUserWithReviews";
 import { ReactNode } from "react";
 import { GraphQLError } from "graphql";
-import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
 vi.mock("aws-amplify/auth");
-
-const { graphqlMock } = vi.hoisted(() => {
-  return { graphqlMock: vi.fn() };
-});
-
-vi.mock("aws-amplify/api", () => ({
-  generateClient: vi.fn(() => ({
-    graphql: graphqlMock,
-  })),
-}));
 
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
@@ -41,13 +34,21 @@ const { useAuthContextMock } = vi.hoisted(() => {
   };
 });
 
-vi.mock("../context/AuthContext", async () => {
-  const actual = await import("../context/AuthContext");
-  return {
-    ...actual,
-    useAuthContext: useAuthContextMock,
-  };
+vi.mock("../context/AuthContext", async () => ({
+  AuthContextProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+  useAuthContext: useAuthContextMock,
+}));
+
+const { graphqlMock } = vi.hoisted(() => {
+  return { graphqlMock: vi.fn() };
 });
+
+vi.mock("aws-amplify/api", () => ({
+  generateClient: vi.fn(() => ({
+    graphql: graphqlMock,
+  })),
+}));
 
 const mockUserWithReviews = {
   id: "bbc98375-b793-4aee-a59a-7872975cd90",
@@ -98,7 +99,7 @@ describe("useGetUserWithReviews", () => {
 
   test("should return user with reviews for given userId", async () => {
     const wrapper = ({ children }: { children?: ReactNode }) => (
-      <MockAuthProvider>{children}</MockAuthProvider>
+      <AuthContextProvider>{children}</AuthContextProvider>
     );
 
     const { result } = renderHook(
@@ -115,9 +116,9 @@ describe("useGetUserWithReviews", () => {
     expect(result.current.isLoading).toBe(false);
   });
 
-  test.only("should return null if user not found", async () => {
+  test("should return null if user not found", async () => {
     const wrapper = ({ children }: { children?: ReactNode }) => (
-      <MockAuthProvider>{children}</MockAuthProvider>
+      <AuthContextProvider>{children}</AuthContextProvider>
     );
 
     const { result } = renderHook(
@@ -127,12 +128,12 @@ describe("useGetUserWithReviews", () => {
       }
     );
 
-    await waitFor(() => result.current.errorMessage !== "");
-
-    expect(result.current.userWithReviews).toBe(null);
-    expect(result.current.errorMessage).toBe(
-      "Error fetching user with ID bbc98375-b793-4aee-a59a-7872975cd91: User not found"
-    );
-    expect(result.current.isLoading).toBe(false);
+    await waitFor(() => {
+      expect(result.current.userWithReviews).toBe(null);
+      expect(result.current.errorMessage).toBe(
+        "Error fetching user with ID bbc98375-b793-4aee-a59a-7872975cd91: User not found"
+      );
+      expect(result.current.isLoading).toBe(false);
+    });
   });
 });

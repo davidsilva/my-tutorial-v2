@@ -5,8 +5,11 @@ import userEvent from "@testing-library/user-event";
 import { createReview } from "../graphql/mutations";
 import { toast } from "react-toastify";
 import useGetProduct from "../hooks/useGetProduct";
-import { AuthStateType, AuthContextType } from "../context/AuthContext";
-import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
+import {
+  AuthContextProvider,
+  AuthStateType,
+  AuthContextType,
+} from "../context/AuthContext";
 
 vi.mock("aws-amplify/auth");
 
@@ -34,15 +37,11 @@ const { useAuthContextMock } = vi.hoisted(() => {
   };
 });
 
-vi.mock("../context/AuthContext", async () => {
-  const actual = await vi.importActual<typeof import("../context/AuthContext")>(
-    "../context/AuthContext"
-  );
-  return {
-    ...actual,
-    useAuthContext: useAuthContextMock,
-  };
-});
+vi.mock("../context/AuthContext", () => ({
+  AuthContextProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+  useAuthContext: useAuthContextMock,
+}));
 
 const { graphqlMock } = vi.hoisted(() => {
   return { graphqlMock: vi.fn() };
@@ -81,20 +80,18 @@ const mockReview = {
   userReviewsId: "1234",
 };
 
-const renderAddReview = async () => {
-  await waitFor(() => {
-    render(
-      <MemoryRouter>
-        <MockAuthProvider>
-          <AddReview />
-        </MockAuthProvider>
-      </MemoryRouter>
-    );
-  });
+const renderAddReview = () => {
+  render(
+    <MemoryRouter>
+      <AuthContextProvider>
+        <AddReview />
+      </AuthContextProvider>
+    </MemoryRouter>
+  );
 };
 
 describe("AddReview", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
 
     vi.mocked(useGetProduct).mockImplementation((productId) => {
@@ -126,7 +123,7 @@ describe("AddReview", () => {
       }
     });
 
-    await renderAddReview();
+    renderAddReview();
   });
 
   test("renders AddReview form", async () => {
@@ -224,7 +221,7 @@ describe("AddReview", () => {
 });
 
 describe("AddReview - Error Handling", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
 
     vi.mocked(useAuthContextMock)
@@ -268,9 +265,9 @@ describe("AddReview - Error Handling", () => {
       }
     });
 
-    await renderAddReview();
+    renderAddReview();
   });
-  test("should not show review form if user is not logged in", async () => {
+  test("should not show review form if user is not logged in", () => {
     expect(
       screen.getByText("Please sign in to add a review")
     ).toBeInTheDocument();

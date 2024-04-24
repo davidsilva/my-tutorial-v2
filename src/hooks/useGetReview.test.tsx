@@ -1,21 +1,14 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { AuthStateType, AuthContextType } from "../context/AuthContext";
+import {
+  AuthContextProvider,
+  AuthStateType,
+  AuthContextType,
+} from "../context/AuthContext";
 import useGetReview from "./useGetReview";
 import { ReactNode } from "react";
 import { GraphQLError } from "graphql";
-import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
 vi.mock("aws-amplify/auth");
-
-const { graphqlMock } = vi.hoisted(() => {
-  return { graphqlMock: vi.fn() };
-});
-
-vi.mock("aws-amplify/api", () => ({
-  generateClient: vi.fn(() => ({
-    graphql: graphqlMock,
-  })),
-}));
 
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
@@ -41,13 +34,21 @@ const { useAuthContextMock } = vi.hoisted(() => {
   };
 });
 
-vi.mock("../context/AuthContext", async () => {
-  const actual = await import("../context/AuthContext");
-  return {
-    ...actual,
-    useAuthContext: useAuthContextMock,
-  };
+vi.mock("../context/AuthContext", async () => ({
+  AuthContextProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+  useAuthContext: useAuthContextMock,
+}));
+
+const { graphqlMock } = vi.hoisted(() => {
+  return { graphqlMock: vi.fn() };
 });
+
+vi.mock("aws-amplify/api", () => ({
+  generateClient: vi.fn(() => ({
+    graphql: graphqlMock,
+  })),
+}));
 
 const mockReview = {
   id: "795f1735-60b8-47bc-a061-8537cc4cfe7c",
@@ -104,7 +105,7 @@ describe("useGetReview", () => {
 
   test("should return review for given reviewId", async () => {
     const wrapper = ({ children }: { children?: ReactNode }) => (
-      <MockAuthProvider>{children}</MockAuthProvider>
+      <AuthContextProvider>{children}</AuthContextProvider>
     );
 
     const { result } = renderHook(
@@ -121,7 +122,7 @@ describe("useGetReview", () => {
 
   test("should return null if review is not found", async () => {
     const wrapper = ({ children }: { children?: ReactNode }) => (
-      <MockAuthProvider>{children}</MockAuthProvider>
+      <AuthContextProvider>{children}</AuthContextProvider>
     );
 
     const { result } = renderHook(

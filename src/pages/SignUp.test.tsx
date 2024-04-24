@@ -1,10 +1,13 @@
 import { describe, test, expect, beforeEach, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import SignUp from "./SignUp";
 import { MemoryRouter } from "react-router-dom";
-import { AuthContextType, AuthStateType } from "../context/AuthContext";
-import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
+import {
+  AuthContextProvider,
+  AuthStateType,
+  AuthContextType,
+} from "../context/AuthContext";
 
 const { mockNavigate } = vi.hoisted(() => {
   return { mockNavigate: vi.fn() };
@@ -28,9 +31,9 @@ const { useAuthContextMock } = vi.hoisted(() => {
       intendedPath: null,
       setIntendedPath: vi.fn(),
       authState: {
-        isLoggedIn: false,
+        isLoggedIn: true,
         isAuthStateKnown: true,
-        user: null,
+        user: { username: "testuser", userId: "1234" },
         isAdmin: false,
         sessionId: "123",
       } as AuthStateType,
@@ -38,13 +41,11 @@ const { useAuthContextMock } = vi.hoisted(() => {
   };
 });
 
-vi.mock("../context/AuthContext", async () => {
-  const actual = await import("../context/AuthContext");
-  return {
-    ...actual,
-    useAuthContext: useAuthContextMock,
-  };
-});
+vi.mock("../context/AuthContext", () => ({
+  AuthContextProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+  useAuthContext: useAuthContextMock,
+}));
 
 vi.mock("aws-amplify/auth");
 
@@ -71,15 +72,13 @@ describe("SignUp page when user is not logged in", () => {
       },
     });
 
-    await waitFor(() => {
-      render(
-        <MemoryRouter>
-          <MockAuthProvider>
-            <SignUp />
-          </MockAuthProvider>
-        </MemoryRouter>
-      );
-    });
+    render(
+      <MemoryRouter>
+        <AuthContextProvider>
+          <SignUp />
+        </AuthContextProvider>
+      </MemoryRouter>
+    );
   });
 
   test("renders sign up form when user is not logged in", async () => {
@@ -156,18 +155,16 @@ describe("SignUp page when user is logged in", () => {
       },
     });
 
-    await waitFor(() => {
-      render(
-        <MemoryRouter>
-          <MockAuthProvider>
-            <SignUp />
-          </MockAuthProvider>
-        </MemoryRouter>
-      );
-    });
+    render(
+      <MemoryRouter>
+        <AuthContextProvider>
+          <SignUp />
+        </AuthContextProvider>
+      </MemoryRouter>
+    );
   });
 
-  test("does not render sign up form when user is logged in", async () => {
+  test("does not render sign up form when user is logged in", () => {
     const signUpForm = screen.queryByRole("form", { name: /Sign Up Form/i });
     expect(signUpForm).not.toBeInTheDocument();
     expect(screen.getByText(/You are logged in now/i)).toBeInTheDocument();

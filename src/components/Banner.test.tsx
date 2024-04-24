@@ -5,8 +5,12 @@ import { MemoryRouter } from "react-router-dom";
 import Banner from "./Banner";
 import { ReactNode } from "react";
 import { CartContextProvider } from "../context/CartContext";
-import { AuthContextType, AuthStateType } from "../context/AuthContext";
-import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
+import {
+  useAuthContext,
+  AuthContextProvider,
+  AuthContextType,
+  AuthStateType,
+} from "../context/AuthContext";
 
 const { mockNavigate } = vi.hoisted(() => {
   return { mockNavigate: vi.fn() };
@@ -26,37 +30,33 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
-const { useAuthContextMock } = vi.hoisted(() => {
-  return {
-    useAuthContextMock: vi.fn().mockReturnValue({
-      signInStep: "",
-      setSignInStep: vi.fn(),
-      signIn: vi.fn(),
-      signOut: signOutMock,
-      signUp: vi.fn(),
-      confirmSignUp: vi.fn(),
-      confirmSignIn: vi.fn(),
-      resetAuthState: vi.fn(),
-      intendedPath: "",
-      setIntendedPath: vi.fn(),
-      authState: {
-        user: null,
-        isLoggedIn: false,
-        isAdmin: false,
-        sessionId: "1234",
-        isAuthStateKnown: false,
-      } as AuthStateType,
-    } as AuthContextType),
-  };
+const { signInMock } = vi.hoisted(() => {
+  return { signInMock: vi.fn().mockResolvedValue({}) };
 });
 
-vi.mock("../context/AuthContext", async () => {
-  const actual = await import("../context/AuthContext");
-  return {
-    ...actual,
-    useAuthContext: useAuthContextMock,
-  };
-});
+vi.mock("../context/AuthContext", async () => ({
+  AuthContextProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+  useAuthContext: vi.fn().mockReturnValue({
+    signIn: signInMock,
+    signOut: signOutMock,
+    signInStep: "",
+    setSignInStep: vi.fn(),
+    signUp: vi.fn(),
+    confirmSignUp: vi.fn(),
+    confirmSignIn: vi.fn(),
+    resetAuthState: vi.fn(),
+    intendedPath: "",
+    setIntendedPath: vi.fn(),
+    authState: {
+      user: null,
+      isLoggedIn: false,
+      isAdmin: false,
+      sessionId: "1234",
+      isAuthStateKnown: false,
+    } as AuthStateType,
+  } as AuthContextType),
+}));
 
 const { useCartContextMock } = vi.hoisted(() => {
   return {
@@ -82,16 +82,14 @@ vi.mock("../context/CartContext", async () => {
 
 vi.mock("aws-amplify/auth");
 
-const renderWithAuthContext = async (component: ReactNode) => {
-  await waitFor(() => {
-    render(
-      <MemoryRouter>
-        <MockAuthProvider>
-          <CartContextProvider>{component}</CartContextProvider>
-        </MockAuthProvider>
-      </MemoryRouter>
-    );
-  });
+const renderWithAuthContext = (component: ReactNode) => {
+  render(
+    <MemoryRouter>
+      <AuthContextProvider>
+        <CartContextProvider>{component}</CartContextProvider>
+      </AuthContextProvider>
+    </MemoryRouter>
+  );
 };
 
 describe("Banner", () => {
@@ -99,7 +97,7 @@ describe("Banner", () => {
     beforeEach(async () => {
       vi.clearAllMocks();
 
-      vi.mocked(useAuthContextMock).mockReturnValueOnce({
+      vi.mocked(useAuthContext).mockReturnValueOnce({
         signInStep: "",
         setSignInStep: vi.fn(),
         signIn: vi.fn(),
@@ -119,7 +117,7 @@ describe("Banner", () => {
         } as AuthStateType,
       } as AuthContextType);
 
-      await renderWithAuthContext(<Banner />);
+      renderWithAuthContext(<Banner />);
     });
 
     test("renders site name", () => {
@@ -172,7 +170,7 @@ describe("Banner", () => {
     beforeEach(async () => {
       vi.clearAllMocks();
 
-      vi.mocked(useAuthContextMock).mockReturnValueOnce({
+      vi.mocked(useAuthContext).mockReturnValueOnce({
         signInStep: "",
         setSignInStep: vi.fn(),
         signIn: vi.fn(),
@@ -195,15 +193,10 @@ describe("Banner", () => {
         } as AuthStateType,
       } as AuthContextType);
 
-      await renderWithAuthContext(<Banner />);
+      renderWithAuthContext(<Banner />);
     });
 
-    test("renders Add Product link when logged in as admin", () => {
-      const addProductLink = screen.getByRole("link", { name: /add product/i });
-      expect(addProductLink).toBeInTheDocument();
-    });
-
-    test("should have an Add Product link", () => {
+    test("reders Add Product link when logged in as admin", () => {
       const addProductLink = screen.getByRole("link", { name: /add product/i });
       expect(addProductLink).toBeInTheDocument();
       expect(addProductLink).toHaveAttribute("href", "/products/new");
@@ -214,7 +207,7 @@ describe("Banner", () => {
     beforeEach(async () => {
       vi.clearAllMocks();
 
-      vi.mocked(useAuthContextMock).mockReturnValue({
+      vi.mocked(useAuthContext).mockReturnValue({
         signInStep: "",
         setSignInStep: vi.fn(),
         signIn: vi.fn(),
@@ -237,7 +230,7 @@ describe("Banner", () => {
         } as AuthStateType,
       } as AuthContextType);
 
-      await renderWithAuthContext(<Banner />);
+      renderWithAuthContext(<Banner />);
     });
 
     test("renders Sign Out button when logged in but not Sign In or Sign Up buttons", async () => {

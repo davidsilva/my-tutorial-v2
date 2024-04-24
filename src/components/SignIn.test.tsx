@@ -1,5 +1,5 @@
 import { vi, describe, test, expect, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import SignIn from "./SignIn";
 import { AuthContextProvider } from "../context/AuthContext";
@@ -37,20 +37,18 @@ vi.mock("../context/AuthContext", async () => ({
 
 vi.mock("aws-amplify/auth");
 
-const renderWithAuthContext = async (component: ReactNode) => {
-  await waitFor(() => {
-    render(
-      <MemoryRouter>
-        <AuthContextProvider>{component}</AuthContextProvider>
-      </MemoryRouter>
-    );
-  });
+const renderWithAuthContext = (component: ReactNode) => {
+  render(
+    <MemoryRouter>
+      <AuthContextProvider>{component}</AuthContextProvider>
+    </MemoryRouter>
+  );
 };
 
 describe("SignIn component", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
-    await renderWithAuthContext(<SignIn />);
+    renderWithAuthContext(<SignIn />);
   });
 
   test("renders sign in form", () => {

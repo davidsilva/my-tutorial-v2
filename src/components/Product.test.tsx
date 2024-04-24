@@ -1,26 +1,17 @@
 import { expect, test, beforeEach, vi, describe } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import Product from "./Product";
 import { Product as ProductType, Review } from "../API";
 import { archiveProduct, restoreProduct } from "../graphql/customMutations";
-import { AuthStateType, AuthContextType } from "../context/AuthContext";
 import { ReactNode } from "react";
 import { CartContextProvider } from "../context/CartContext";
-import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
-
-const renderWithAuthContext = async (component: ReactNode) => {
-  await waitFor(() => {
-    render(
-      <MemoryRouter>
-        <MockAuthProvider>
-          <CartContextProvider>{component}</CartContextProvider>
-        </MockAuthProvider>
-      </MemoryRouter>
-    );
-  });
-};
+import {
+  AuthContextProvider,
+  AuthContextType,
+  AuthStateType,
+} from "../context/AuthContext";
 
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
@@ -46,13 +37,21 @@ const { useAuthContextMock } = vi.hoisted(() => {
   };
 });
 
-vi.mock("../context/AuthContext", async () => {
-  const actual = await import("../context/AuthContext");
-  return {
-    ...actual,
-    useAuthContext: useAuthContextMock,
-  };
-});
+vi.mock("../context/AuthContext", async () => ({
+  AuthContextProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+  useAuthContext: useAuthContextMock,
+}));
+
+const renderWithAuthContext = (component: ReactNode) => {
+  render(
+    <MemoryRouter>
+      <AuthContextProvider>
+        <CartContextProvider>{component}</CartContextProvider>
+      </AuthContextProvider>
+    </MemoryRouter>
+  );
+};
 
 const mockProduct: ProductType = {
   __typename: "Product",
@@ -119,7 +118,7 @@ describe("Product", () => {
     });
 
     test("renders edit and archive buttons for admin", async () => {
-      await renderWithAuthContext(<Product product={mockProduct} />);
+      renderWithAuthContext(<Product product={mockProduct} />);
       expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: /archive/i })
@@ -129,7 +128,7 @@ describe("Product", () => {
     test("navigates to edit page when edit button is clicked", async () => {
       const user = userEvent.setup();
 
-      await renderWithAuthContext(<Product product={mockProduct} />);
+      renderWithAuthContext(<Product product={mockProduct} />);
 
       const editButton = await screen.findByRole("button", { name: /Edit/i });
 
@@ -140,7 +139,7 @@ describe("Product", () => {
     test("calls graphql with archiveProduct when archive button is clicked", async () => {
       const user = userEvent.setup();
 
-      await renderWithAuthContext(<Product product={mockProduct} />);
+      renderWithAuthContext(<Product product={mockProduct} />);
 
       vi.mocked(graphqlMock).mockResolvedValueOnce({});
 
@@ -172,7 +171,7 @@ describe("Product", () => {
 
       vi.mocked(graphqlMock).mockResolvedValueOnce({});
 
-      await renderWithAuthContext(<Product product={archivedProduct} />);
+      renderWithAuthContext(<Product product={archivedProduct} />);
 
       const restoreButton = await screen.findByRole("button", {
         name: /restore/i,
@@ -205,7 +204,7 @@ describe("Product", () => {
           },
         });
 
-        await renderWithAuthContext(<Product product={mockProduct} />);
+        renderWithAuthContext(<Product product={mockProduct} />);
       });
 
       test("renders product without edit or archive buttons", async () => {
@@ -240,7 +239,7 @@ describe("Product", () => {
         },
       });
 
-      await renderWithAuthContext(<Product product={mockProduct} />);
+      renderWithAuthContext(<Product product={mockProduct} />);
     });
 
     test("renders product without edit or archive buttons", async () => {

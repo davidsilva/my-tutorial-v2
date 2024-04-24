@@ -1,14 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { AuthUser, getCurrentUser } from "aws-amplify/auth";
-import { AsyncProcess, AsyncProcessStatus } from "../types";
-
-interface UserCheckResult {
-  user: AuthUser | null;
-}
-
-interface UserCheckError {
-  message: string;
-}
+import { getCurrentUser } from "aws-amplify/auth";
+import {
+  AsyncProcess,
+  AsyncProcessStatus,
+  UserCheckResult,
+  UserCheckError,
+} from "../types";
 
 const useCheckForUser = () => {
   const [userCheck, setUserCheck] = useState<

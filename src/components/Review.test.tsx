@@ -1,10 +1,43 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { AuthStateType, AuthContextType } from "../context/AuthContext";
+import {
+  AuthContextProvider,
+  AuthStateType,
+  AuthContextType,
+} from "../context/AuthContext";
 import { Review } from "./";
 import { Review as ReviewType } from "../API";
 import userEvent from "@testing-library/user-event";
-import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
+
+const { useAuthContextMock } = vi.hoisted(() => {
+  return {
+    useAuthContextMock: vi.fn().mockReturnValue({
+      signInStep: "",
+      setSignInStep: vi.fn(),
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+      signUp: vi.fn(),
+      confirmSignUp: vi.fn(),
+      confirmSignIn: vi.fn(),
+      resetAuthState: vi.fn(),
+      intendedPath: null,
+      setIntendedPath: vi.fn(),
+      authState: {
+        isLoggedIn: true,
+        isAuthStateKnown: true,
+        user: { username: "testuser", userId: "123" },
+        isAdmin: false,
+        sessionId: "123",
+      } as AuthStateType,
+    } as AuthContextType),
+  };
+});
+
+vi.mock("../context/AuthContext", async () => ({
+  AuthContextProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+  useAuthContext: useAuthContextMock,
+}));
 
 const { mockNavigate } = vi.hoisted(() => {
   return { mockNavigate: vi.fn() };
@@ -51,53 +84,19 @@ vi.mock("../hooks/useGetReview", () => {
   };
 });
 
-const { useAuthContextMock } = vi.hoisted(() => {
-  return {
-    useAuthContextMock: vi.fn().mockReturnValue({
-      signInStep: "",
-      setSignInStep: vi.fn(),
-      signIn: vi.fn(),
-      signOut: vi.fn(),
-      signUp: vi.fn(),
-      confirmSignUp: vi.fn(),
-      confirmSignIn: vi.fn(),
-      resetAuthState: vi.fn(),
-      intendedPath: null,
-      setIntendedPath: vi.fn(),
-      authState: {
-        isLoggedIn: true,
-        isAuthStateKnown: true,
-        user: { username: "testuser", userId: "123" },
-        isAdmin: false,
-        sessionId: "123",
-      } as AuthStateType,
-    } as AuthContextType),
-  };
-});
-
-vi.mock("../context/AuthContext", async () => {
-  const actual = await import("../context/AuthContext");
-  return {
-    ...actual,
-    useAuthContext: useAuthContextMock,
-  };
-});
-
-const renderComponent = async () => {
-  await waitFor(async () => {
-    render(
-      <MemoryRouter>
-        <MockAuthProvider>
-          <Review />
-        </MockAuthProvider>
-      </MemoryRouter>
-    );
-  });
+const renderComponent = () => {
+  render(
+    <MemoryRouter>
+      <AuthContextProvider>
+        <Review />
+      </AuthContextProvider>
+    </MemoryRouter>
+  );
 };
 
 describe("Review", () => {
   describe("when user is not logged in", () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       vi.clearAllMocks();
 
       vi.mocked(useAuthContextMock).mockReturnValue({
@@ -109,10 +108,10 @@ describe("Review", () => {
           user: null,
         },
       });
-      await renderComponent();
+      renderComponent();
     });
 
-    test("should render review without edit or delete buttons", async () => {
+    test("should render review without edit or delete buttons", () => {
       expect(screen.getByText("Great product!")).toBeInTheDocument();
       expect(screen.queryByText("Edit")).not.toBeInTheDocument();
       expect(screen.queryByText("Delete")).not.toBeInTheDocument();
@@ -120,7 +119,7 @@ describe("Review", () => {
   });
 
   describe("when user is logged in and is owner of the review", () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       vi.clearAllMocks();
       vi.mocked(useAuthContextMock).mockReturnValue({
         ...useAuthContextMock(),
@@ -131,9 +130,9 @@ describe("Review", () => {
           user: { username: "testuser", userId: "123" },
         },
       });
-      await renderComponent();
+      renderComponent();
     });
-    test("should render review with edit and delete buttons if user is owner of the review", async () => {
+    test("should render review with edit and delete buttons if user is owner of the review", () => {
       expect(screen.getByText("Great product!")).toBeInTheDocument();
       expect(screen.getByText("Edit")).toBeInTheDocument();
       expect(screen.getByText("Delete")).toBeInTheDocument();
@@ -149,7 +148,7 @@ describe("Review", () => {
   });
 
   describe("when user is logged in and is not owner of the review", () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       vi.clearAllMocks();
       vi.mocked(useAuthContextMock).mockReturnValue({
         ...useAuthContextMock(),
@@ -160,9 +159,9 @@ describe("Review", () => {
           user: { username: "notowner", userId: "123" },
         },
       });
-      await renderComponent();
+      renderComponent();
     });
-    test("should render review without edit or delete buttons if user is not owner of the review", async () => {
+    test("should render review without edit or delete buttons if user is not owner of the review", () => {
       expect(screen.getByText("Great product!")).toBeInTheDocument();
       expect(screen.queryByText("Edit")).not.toBeInTheDocument();
       expect(screen.queryByText("Delete")).not.toBeInTheDocument();

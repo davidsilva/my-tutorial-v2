@@ -1,9 +1,12 @@
 import { describe, expect, test, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import SignIn from "./SignIn";
-import { AuthContextType, AuthStateType } from "../context/AuthContext";
+import {
+  AuthContextProvider,
+  AuthStateType,
+  AuthContextType,
+} from "../context/AuthContext";
 import { MemoryRouter } from "react-router-dom";
-import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
 
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
@@ -21,7 +24,7 @@ const { useAuthContextMock } = vi.hoisted(() => {
       authState: {
         isLoggedIn: true,
         isAuthStateKnown: true,
-        user: { username: "testuser", userId: "123" },
+        user: { username: "testuser", userId: "1234" },
         isAdmin: false,
         sessionId: "123",
       } as AuthStateType,
@@ -29,30 +32,26 @@ const { useAuthContextMock } = vi.hoisted(() => {
   };
 });
 
-vi.mock("../context/AuthContext", async () => {
-  const actual = await import("../context/AuthContext");
-  return {
-    ...actual,
-    useAuthContext: useAuthContextMock,
-  };
-});
+vi.mock("../context/AuthContext", async () => ({
+  AuthContextProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+  useAuthContext: useAuthContextMock,
+}));
 
 vi.mock("aws-amplify/auth");
 
-const renderSignIn = async () => {
-  await waitFor(() => {
-    render(
-      <MemoryRouter>
-        <MockAuthProvider>
-          <SignIn />
-        </MockAuthProvider>
-      </MemoryRouter>
-    );
-  });
+const renderSignIn = () => {
+  render(
+    <MemoryRouter>
+      <AuthContextProvider>
+        <SignIn />
+      </AuthContextProvider>
+    </MemoryRouter>
+  );
 };
 
 describe("Sign In page", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
 
     vi.mocked(useAuthContextMock).mockReturnValue({
@@ -65,7 +64,7 @@ describe("Sign In page", () => {
       },
     });
 
-    await renderSignIn();
+    renderSignIn();
   });
 
   test("renders the sign in form if user is not already signed in", () => {
@@ -79,7 +78,7 @@ describe("Sign In page", () => {
 });
 
 describe("Sign In page with user already signed in", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
 
     vi.mocked(useAuthContextMock).mockReturnValue({
@@ -92,10 +91,10 @@ describe("Sign In page with user already signed in", () => {
       },
     });
 
-    await renderSignIn();
+    renderSignIn();
   });
 
-  test("does not show sign in form if user is already signed in", async () => {
+  test("does not show sign in form if user is already signed in", () => {
     const signInForm = screen.queryByRole("form", {
       name: /sign in form/i,
     });

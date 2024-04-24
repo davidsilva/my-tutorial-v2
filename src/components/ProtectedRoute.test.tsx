@@ -1,24 +1,13 @@
-import { render, waitFor, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { AuthStateType, AuthContextType } from "../context/AuthContext";
 import ProtectedRoute from "./ProtectedRoute";
-import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
+import {
+  AuthContextProvider,
+  AuthContextType,
+  AuthStateType,
+} from "../context/AuthContext";
 
 vi.mock("aws-amplify/auth");
-
-const { mockNavigate } = vi.hoisted(() => {
-  return { mockNavigate: vi.fn() };
-});
-
-vi.mock("react-router-dom", async () => {
-  const router = await vi.importActual<typeof import("react-router-dom")>(
-    "react-router-dom"
-  );
-  return {
-    ...router,
-    useNavigate: vi.fn().mockReturnValue(mockNavigate),
-  };
-});
 
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
@@ -44,6 +33,26 @@ const { useAuthContextMock } = vi.hoisted(() => {
   };
 });
 
+vi.mock("../context/AuthContext", async () => ({
+  AuthContextProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+  useAuthContext: useAuthContextMock,
+}));
+
+const { mockNavigate } = vi.hoisted(() => {
+  return { mockNavigate: vi.fn() };
+});
+
+vi.mock("react-router-dom", async () => {
+  const router = await vi.importActual<typeof import("react-router-dom")>(
+    "react-router-dom"
+  );
+  return {
+    ...router,
+    useNavigate: vi.fn().mockReturnValue(mockNavigate),
+  };
+});
+
 describe("ProtectedRoute", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -61,15 +70,13 @@ describe("ProtectedRoute", () => {
       },
     });
 
-    await waitFor(() => {
-      render(
-        <MemoryRouter>
-          <MockAuthProvider>
-            <ProtectedRoute />
-          </MockAuthProvider>
-        </MemoryRouter>
-      );
-    });
+    render(
+      <MemoryRouter>
+        <AuthContextProvider>
+          <ProtectedRoute />
+        </AuthContextProvider>
+      </MemoryRouter>
+    );
 
     expect(mockNavigate).toHaveBeenCalledWith("/signin");
   });
@@ -84,17 +91,15 @@ describe("ProtectedRoute", () => {
       },
     });
 
-    await waitFor(() => {
-      render(
-        <MemoryRouter>
-          <MockAuthProvider>
-            <ProtectedRoute role="admin" />
-          </MockAuthProvider>
-        </MemoryRouter>
-      );
-    });
+    render(
+      <MemoryRouter>
+        <AuthContextProvider>
+          <ProtectedRoute role="admin" />
+        </AuthContextProvider>
+      </MemoryRouter>
+    );
 
-    expect(mockNavigate).toHaveBeenCalledWith("/signin");
+    expect(mockNavigate).toHaveBeenCalledWith("/not-authorized");
   });
 
   test("renders children when user is logged in and has correct role", async () => {
@@ -107,17 +112,15 @@ describe("ProtectedRoute", () => {
       },
     });
 
-    await waitFor(() => {
-      render(
-        <MemoryRouter>
-          <MockAuthProvider>
-            <ProtectedRoute role="admin">
-              <div>Protected content</div>
-            </ProtectedRoute>
-          </MockAuthProvider>
-        </MemoryRouter>
-      );
-    });
+    render(
+      <MemoryRouter>
+        <AuthContextProvider>
+          <ProtectedRoute role="admin">
+            <div>Protected content</div>
+          </ProtectedRoute>
+        </AuthContextProvider>
+      </MemoryRouter>
+    );
 
     expect(screen.getByText("Protected content")).toBeInTheDocument();
   });

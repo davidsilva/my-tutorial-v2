@@ -1,25 +1,16 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import ListProducts from "./ListProducts";
 import { MemoryRouter } from "react-router-dom";
-import { AuthStateType, AuthContextType } from "../context/AuthContext";
 import { ReactNode } from "react";
 import { ProductWithReviews, ListProductsQueryWithReviews } from "../types";
 import { Review } from "../API";
 import userEvent from "@testing-library/user-event";
 import { CartContextProvider } from "../context/CartContext";
-import { MockAuthProvider } from "../__mocks__/MockAuthProvider";
-
-const renderWithAuthContext = async (component: ReactNode) => {
-  await waitFor(() => {
-    render(
-      <MemoryRouter>
-        <MockAuthProvider>
-          <CartContextProvider>{component}</CartContextProvider>
-        </MockAuthProvider>
-      </MemoryRouter>
-    );
-  });
-};
+import {
+  AuthContextProvider,
+  AuthContextType,
+  AuthStateType,
+} from "../context/AuthContext";
 
 const { useAuthContextMock } = vi.hoisted(() => {
   return {
@@ -45,13 +36,21 @@ const { useAuthContextMock } = vi.hoisted(() => {
   };
 });
 
-vi.mock("../context/AuthContext", async () => {
-  const actual = await import("../context/AuthContext");
-  return {
-    ...actual,
-    useAuthContext: useAuthContextMock,
-  };
-});
+vi.mock("../context/AuthContext", async () => ({
+  AuthContextProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
+  useAuthContext: useAuthContextMock,
+}));
+
+const renderWithAuthContext = (component: ReactNode) => {
+  render(
+    <MemoryRouter>
+      <AuthContextProvider>
+        <CartContextProvider>{component}</CartContextProvider>
+      </AuthContextProvider>
+    </MemoryRouter>
+  );
+};
 
 vi.mock("aws-amplify/api", () => {
   return {
@@ -103,7 +102,7 @@ describe("ListProducts", () => {
       vi.clearAllMocks();
 
       vi.mocked(useAuthContextMock).mockReturnValueOnce({
-        ...useAuthContextMock,
+        ...useAuthContextMock(),
         authState: {
           isLoggedIn: true,
           isAuthStateKnown: true,
@@ -113,7 +112,8 @@ describe("ListProducts", () => {
         } as AuthStateType,
       });
 
-      await renderWithAuthContext(<ListProducts />);
+      renderWithAuthContext(<ListProducts />);
+      await waitFor(() => {});
     });
 
     test("renders products for a signed-in user", async () => {
@@ -156,7 +156,7 @@ describe("ListProducts", () => {
       vi.clearAllMocks();
 
       vi.mocked(useAuthContextMock).mockReturnValueOnce({
-        ...useAuthContextMock,
+        ...useAuthContextMock(),
         authState: {
           isLoggedIn: false,
           isAuthStateKnown: true,
@@ -166,7 +166,8 @@ describe("ListProducts", () => {
         } as AuthStateType,
       });
 
-      await renderWithAuthContext(<ListProducts />);
+      renderWithAuthContext(<ListProducts />);
+      await waitFor(() => {});
     });
 
     test("renders products for a signed-out user", async () => {
