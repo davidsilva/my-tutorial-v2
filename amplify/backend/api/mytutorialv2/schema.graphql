@@ -76,7 +76,24 @@ type User
   orders: [Order] @hasMany
 }
 
-type Session @model {
+type Session
+  @model
+  @auth(
+    rules: [
+      { allow: owner, operations: [read, create, update] }
+      {
+        allow: private
+        provider: userPools
+        operations: [read, create, update]
+      }
+      { allow: public, provider: iam, operations: [read] }
+      {
+        allow: groups
+        groups: ["adminUsers"]
+        operations: [read, create, update]
+      }
+    ]
+  ) {
   id: ID!
   userId: ID
   cartItems: [CartItem] @hasMany

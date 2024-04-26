@@ -1,3 +1,40 @@
+export const listCartItemsWithProduct = /* GraphQL */ `
+  query ListCartItemsWithProduct(
+    $filter: ModelCartItemFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    listCartItems(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        __typename
+        id
+        sessionId
+        productId
+        quantity
+        createdAt
+        updatedAt
+        product {
+          __typename
+          id
+          name
+          description
+          price
+          isArchived
+          image
+          stripePriceId
+          stripeProductId
+          createdAt
+          updatedAt
+          owner
+        }
+        productCartItemsId
+        sessionCartItemsId
+      }
+      nextToken
+    }
+  }
+`;
+
 export const listProductsWithReviews = /* GraphQL */ `
   query ListProductsWithReviews(
     $filter: ModelProductFilterInput

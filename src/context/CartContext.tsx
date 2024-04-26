@@ -1,12 +1,33 @@
-import React, { useState, useEffect, createContext, useContext } from "react";
-import { Product } from "../API";
+import React, {
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+  useCallback,
+} from "react";
+import {
+  CreateCartItemMutationVariables,
+  DeleteCartItemMutationVariables,
+  Product,
+  UpdateCartItemMutationVariables,
+  CartItem,
+} from "../API";
+import { ListCartItemsQuery } from "../API";
+import {
+  createCartItem,
+  deleteCartItem,
+  updateCartItem,
+} from "../graphql/mutations";
+import { listCartItemsWithProduct } from "../graphql/customQueries";
+import { generateClient } from "aws-amplify/api";
+import { useAuthContext } from "./AuthContext";
+
+const client = generateClient();
 
 type CartContextProviderProps = {
   children: React.ReactNode;
   initialState?: CartItem[];
 };
-
-export type CartItem = Product & { quantity: number };
 
 export type CartContextType = {
   cartItems: CartItem[];
@@ -17,6 +38,7 @@ export type CartContextType = {
   decrementQuantity: (item: CartItem) => void;
   totalAmount: number;
   totalQuantity: number;
+  fetchCartItems: () => Promise<void>;
 };
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -29,9 +51,45 @@ export const CartContextProvider: React.FC<CartContextProviderProps> = ({
   const [totalAmount, setTotalAmount] = useState(0);
   const [totalQuantity, setTotalQuantity] = useState(0);
 
+  const { authState } = useAuthContext();
+
+  const fetchCartItems = useCallback(async () => {
+    const sessionId = authState?.sessionId;
+    try {
+      const response = await client.graphql({
+        query: listCartItemsWithProduct,
+        authMode: authState?.isLoggedIn ? "userPool" : "iam",
+        variables: {
+          filter: { sessionId: { eq: sessionId } },
+          limit: 1000,
+        },
+      });
+
+      if ("data" in response) {
+        const data = response.data as ListCartItemsQuery;
+        console.log("data", data);
+        const cartItems = data.listCartItems?.items || [];
+        const nonNullCartItems = cartItems.filter(Boolean) as CartItem[];
+        console.log("cartItems", cartItems);
+        setCartItems(nonNullCartItems);
+      }
+    } catch (err) {
+      console.error("error fetching cart items: ", err);
+    }
+  }, [authState?.isLoggedIn, authState?.sessionId]);
+
+  useEffect(() => {
+    if (authState?.isAuthStateKnown && authState?.sessionId) {
+      fetchCartItems();
+    }
+  }, [authState?.isAuthStateKnown, authState?.sessionId, fetchCartItems]);
+
   useEffect(() => {
     const newTotalAmount = cartItems.reduce(
-      (acc, cartItem) => acc + cartItem.price * cartItem.quantity,
+      (acc, cartItem) =>
+        cartItem.product
+          ? acc + (cartItem.product.price * cartItem.quantity) / 100
+          : acc,
       0
     );
     setTotalAmount(newTotalAmount);
@@ -43,65 +101,154 @@ export const CartContextProvider: React.FC<CartContextProviderProps> = ({
     setTotalQuantity(newTotalQuantity);
   }, [cartItems]);
 
-  const addToCart = (product: Product, quantity: number = 1) => {
+  const addToCart = async (product: Product, quantity: number = 1) => {
+    console.log("addToCart", product, quantity);
     const existingItem = cartItems.find(
-      (cartItem) => cartItem.id === product.id
+      (cartItem) => cartItem.productId === product.id
     );
     if (existingItem) {
-      setCartItems(
-        cartItems.map((cartItem) =>
-          cartItem.id === product.id
-            ? { ...cartItem, quantity: cartItem.quantity + quantity }
-            : cartItem
-        )
-      );
+      incrementQuantity(existingItem, quantity);
     } else {
-      const newItem = { ...product, quantity };
-      setCartItems((prevItems) => [...prevItems, newItem]);
+      if (!authState?.sessionId) {
+        throw new Error("sessionId is required to add items to cart");
+      }
+
+      const newItem: CartItem = {
+        __typename: "CartItem",
+        id: "",
+        sessionId: authState?.sessionId,
+        productId: product.id,
+        quantity,
+        createdAt: "",
+        updatedAt: "",
+        productCartItemsId: null,
+        sessionCartItemsId: null,
+      };
+
+      console.log("new item to add to cart", newItem);
+
+      const variables: CreateCartItemMutationVariables = {
+        input: {
+          productId: product.id,
+          quantity,
+          sessionId: authState?.sessionId,
+        },
+      };
+
+      try {
+        const response = await client.graphql({
+          query: createCartItem,
+          authMode: authState?.isLoggedIn ? "userPool" : "iam",
+          variables,
+        });
+        if ("data" in response && response.data?.createCartItem) {
+          newItem.id = response.data.createCartItem.id;
+          newItem.createdAt = response.data.createCartItem.createdAt;
+          newItem.updatedAt = response.data.createCartItem.updatedAt;
+
+          console.log("newItem", newItem);
+
+          setCartItems((prevItems) => [...prevItems, newItem]);
+        }
+      } catch (err) {
+        console.error("error adding item to cart: ", err);
+      }
     }
   };
 
-  const removeFromCart = (item: CartItem) => {
+  const removeFromCart = async (item: CartItem) => {
     const newCartItems = cartItems.filter(
       (cartItem) => cartItem.id !== item.id
     );
     setCartItems(newCartItems);
+
+    const variables: DeleteCartItemMutationVariables = {
+      input: {
+        id: item.id,
+      },
+    };
+
+    try {
+      await client.graphql({
+        query: deleteCartItem,
+        authMode: authState?.isLoggedIn ? "userPool" : "iam",
+        variables,
+      });
+    } catch (err) {
+      console.error("error removing item from cart: ", err);
+    }
   };
 
   const clearCart = () => {
     setCartItems([]);
   };
 
-  const incrementQuantity = (item: CartItem) => {
+  const incrementQuantity = async (item: CartItem, increment: number = 1) => {
     const newCartItems = cartItems.map((cartItem) => {
       if (cartItem.id === item.id) {
         return {
           ...cartItem,
-          quantity: cartItem.quantity + 1,
+          quantity: cartItem.quantity + increment,
         };
       }
       return cartItem;
     });
     setCartItems(newCartItems);
+
+    if (!authState?.sessionId) {
+      throw new Error("sessionId is required to add items to cart");
+    }
+
+    const variables: UpdateCartItemMutationVariables = {
+      input: {
+        id: item.id,
+        quantity: item.quantity + increment,
+      },
+    };
+
+    try {
+      await client.graphql({
+        query: updateCartItem,
+        authMode: authState?.isLoggedIn ? "userPool" : "iam",
+        variables,
+      });
+    } catch (err) {
+      console.error("error updating item quantity: ", err);
+    }
   };
 
-  const decrementQuantity = (item: CartItem) => {
-    const newCartItems = cartItems.map((cartItem) => {
-      if (cartItem.id === item.id) {
-        return {
-          ...cartItem,
-          quantity: cartItem.quantity > 1 ? cartItem.quantity - 1 : 0,
-        };
+  const decrementQuantity = (item: CartItem, decrement: number = 1) => {
+    if (item.quantity - decrement <= 0) {
+      removeFromCart(item);
+    } else {
+      const newCartItems = cartItems.map((cartItem) => {
+        if (cartItem.id === item.id) {
+          return {
+            ...cartItem,
+            quantity: cartItem.quantity - decrement,
+          };
+        }
+        return cartItem;
+      });
+      setCartItems(newCartItems);
+
+      const variables: UpdateCartItemMutationVariables = {
+        input: {
+          id: item.id,
+          quantity: item.quantity - decrement,
+        },
+      };
+
+      try {
+        client.graphql({
+          query: updateCartItem,
+          authMode: authState?.isLoggedIn ? "userPool" : "iam",
+          variables,
+        });
+      } catch (err) {
+        console.error("error updating item quantity: ", err);
       }
-      return cartItem;
-    });
-
-    const filteredCartItems = newCartItems.filter(
-      (cartItem) => cartItem.quantity > 0
-    );
-    console.log("filteredCartItems", filteredCartItems);
-
-    setCartItems(filteredCartItems);
+    }
   };
 
   return (
@@ -115,6 +262,7 @@ export const CartContextProvider: React.FC<CartContextProviderProps> = ({
         decrementQuantity,
         totalAmount,
         totalQuantity,
+        fetchCartItems,
       }}
     >
       {children}
