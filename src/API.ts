@@ -152,6 +152,8 @@ export type ModelCartItemFilterInput = {
   sessionId?: ModelIDInput | null,
   productId?: ModelIDInput | null,
   quantity?: ModelIntInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
   and?: Array< ModelCartItemFilterInput | null > | null,
   or?: Array< ModelCartItemFilterInput | null > | null,
   not?: ModelCartItemFilterInput | null,
@@ -211,20 +213,6 @@ export type ModelIntInput = {
   attributeType?: ModelAttributeTypes | null,
 };
 
-export type ModelProductFilterInput = {
-  id?: ModelIDInput | null,
-  name?: ModelStringInput | null,
-  description?: ModelStringInput | null,
-  price?: ModelIntInput | null,
-  isArchived?: ModelBooleanInput | null,
-  image?: ModelStringInput | null,
-  stripePriceId?: ModelStringInput | null,
-  stripeProductId?: ModelStringInput | null,
-  and?: Array< ModelProductFilterInput | null > | null,
-  or?: Array< ModelProductFilterInput | null > | null,
-  not?: ModelProductFilterInput | null,
-};
-
 export type ModelStringInput = {
   ne?: string | null,
   eq?: string | null,
@@ -239,6 +227,23 @@ export type ModelStringInput = {
   attributeExists?: boolean | null,
   attributeType?: ModelAttributeTypes | null,
   size?: ModelSizeInput | null,
+};
+
+export type ModelProductFilterInput = {
+  id?: ModelIDInput | null,
+  name?: ModelStringInput | null,
+  description?: ModelStringInput | null,
+  price?: ModelIntInput | null,
+  isArchived?: ModelBooleanInput | null,
+  image?: ModelStringInput | null,
+  stripePriceId?: ModelStringInput | null,
+  stripeProductId?: ModelStringInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
+  and?: Array< ModelProductFilterInput | null > | null,
+  or?: Array< ModelProductFilterInput | null > | null,
+  not?: ModelProductFilterInput | null,
+  owner?: ModelStringInput | null,
 };
 
 export type ModelBooleanInput = {
@@ -291,6 +296,9 @@ export type ModelProductConditionInput = {
   and?: Array< ModelProductConditionInput | null > | null,
   or?: Array< ModelProductConditionInput | null > | null,
   not?: ModelProductConditionInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
+  owner?: ModelStringInput | null,
 };
 
 export type UpdateProductInput = {
@@ -324,8 +332,11 @@ export type ModelReviewConditionInput = {
   and?: Array< ModelReviewConditionInput | null > | null,
   or?: Array< ModelReviewConditionInput | null > | null,
   not?: ModelReviewConditionInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
   productReviewsId?: ModelIDInput | null,
   userReviewsId?: ModelIDInput | null,
+  owner?: ModelStringInput | null,
 };
 
 export type UpdateReviewInput = {
@@ -359,6 +370,9 @@ export type ModelUserConditionInput = {
   and?: Array< ModelUserConditionInput | null > | null,
   or?: Array< ModelUserConditionInput | null > | null,
   not?: ModelUserConditionInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
+  owner?: ModelStringInput | null,
 };
 
 export type UpdateUserInput = {
@@ -387,7 +401,10 @@ export type ModelSessionConditionInput = {
   and?: Array< ModelSessionConditionInput | null > | null,
   or?: Array< ModelSessionConditionInput | null > | null,
   not?: ModelSessionConditionInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
   userSessionsId?: ModelIDInput | null,
+  owner?: ModelStringInput | null,
 };
 
 export type UpdateSessionInput = {
@@ -417,6 +434,8 @@ export type ModelCartItemConditionInput = {
   and?: Array< ModelCartItemConditionInput | null > | null,
   or?: Array< ModelCartItemConditionInput | null > | null,
   not?: ModelCartItemConditionInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
   productCartItemsId?: ModelIDInput | null,
   sessionCartItemsId?: ModelIDInput | null,
 };
@@ -449,7 +468,10 @@ export type ModelOrderConditionInput = {
   and?: Array< ModelOrderConditionInput | null > | null,
   or?: Array< ModelOrderConditionInput | null > | null,
   not?: ModelOrderConditionInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
   userOrdersId?: ModelIDInput | null,
+  owner?: ModelStringInput | null,
 };
 
 export type ModelOrderStatusInput = {
@@ -487,8 +509,11 @@ export type ModelOrderItemConditionInput = {
   and?: Array< ModelOrderItemConditionInput | null > | null,
   or?: Array< ModelOrderItemConditionInput | null > | null,
   not?: ModelOrderItemConditionInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
   productOrderItemsId?: ModelIDInput | null,
   orderItemsId?: ModelIDInput | null,
+  owner?: ModelStringInput | null,
 };
 
 export type UpdateOrderItemInput = {
@@ -510,11 +535,14 @@ export type ModelReviewFilterInput = {
   rating?: ModelIntInput | null,
   content?: ModelStringInput | null,
   isArchived?: ModelBooleanInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
   and?: Array< ModelReviewFilterInput | null > | null,
   or?: Array< ModelReviewFilterInput | null > | null,
   not?: ModelReviewFilterInput | null,
   productReviewsId?: ModelIDInput | null,
   userReviewsId?: ModelIDInput | null,
+  owner?: ModelStringInput | null,
 };
 
 export type ModelUserFilterInput = {
@@ -524,9 +552,12 @@ export type ModelUserFilterInput = {
   firstName?: ModelStringInput | null,
   lastName?: ModelStringInput | null,
   isArchived?: ModelBooleanInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
   and?: Array< ModelUserFilterInput | null > | null,
   or?: Array< ModelUserFilterInput | null > | null,
   not?: ModelUserFilterInput | null,
+  owner?: ModelStringInput | null,
 };
 
 export type ModelUserConnection = {
@@ -539,10 +570,13 @@ export type ModelSessionFilterInput = {
   id?: ModelIDInput | null,
   userId?: ModelIDInput | null,
   deletedAt?: ModelStringInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
   and?: Array< ModelSessionFilterInput | null > | null,
   or?: Array< ModelSessionFilterInput | null > | null,
   not?: ModelSessionFilterInput | null,
   userSessionsId?: ModelIDInput | null,
+  owner?: ModelStringInput | null,
 };
 
 export type ModelOrderFilterInput = {
@@ -550,10 +584,13 @@ export type ModelOrderFilterInput = {
   userId?: ModelIDInput | null,
   total?: ModelIntInput | null,
   status?: ModelOrderStatusInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
   and?: Array< ModelOrderFilterInput | null > | null,
   or?: Array< ModelOrderFilterInput | null > | null,
   not?: ModelOrderFilterInput | null,
   userOrdersId?: ModelIDInput | null,
+  owner?: ModelStringInput | null,
 };
 
 export type ModelOrderItemFilterInput = {
@@ -562,11 +599,14 @@ export type ModelOrderItemFilterInput = {
   productId?: ModelIDInput | null,
   quantity?: ModelIntInput | null,
   price?: ModelIntInput | null,
+  createdAt?: ModelStringInput | null,
+  updatedAt?: ModelStringInput | null,
   and?: Array< ModelOrderItemFilterInput | null > | null,
   or?: Array< ModelOrderItemFilterInput | null > | null,
   not?: ModelOrderItemFilterInput | null,
   productOrderItemsId?: ModelIDInput | null,
   orderItemsId?: ModelIDInput | null,
+  owner?: ModelStringInput | null,
 };
 
 export type ModelSubscriptionProductFilterInput = {
@@ -578,8 +618,14 @@ export type ModelSubscriptionProductFilterInput = {
   image?: ModelSubscriptionStringInput | null,
   stripePriceId?: ModelSubscriptionStringInput | null,
   stripeProductId?: ModelSubscriptionStringInput | null,
+  createdAt?: ModelSubscriptionStringInput | null,
+  updatedAt?: ModelSubscriptionStringInput | null,
   and?: Array< ModelSubscriptionProductFilterInput | null > | null,
   or?: Array< ModelSubscriptionProductFilterInput | null > | null,
+  productReviewsId?: ModelSubscriptionIDInput | null,
+  productCartItemsId?: ModelSubscriptionIDInput | null,
+  productOrderItemsId?: ModelSubscriptionIDInput | null,
+  owner?: ModelStringInput | null,
 };
 
 export type ModelSubscriptionIDInput = {
@@ -634,8 +680,11 @@ export type ModelSubscriptionReviewFilterInput = {
   rating?: ModelSubscriptionIntInput | null,
   content?: ModelSubscriptionStringInput | null,
   isArchived?: ModelSubscriptionBooleanInput | null,
+  createdAt?: ModelSubscriptionStringInput | null,
+  updatedAt?: ModelSubscriptionStringInput | null,
   and?: Array< ModelSubscriptionReviewFilterInput | null > | null,
   or?: Array< ModelSubscriptionReviewFilterInput | null > | null,
+  owner?: ModelStringInput | null,
 };
 
 export type ModelSubscriptionUserFilterInput = {
@@ -645,16 +694,26 @@ export type ModelSubscriptionUserFilterInput = {
   firstName?: ModelSubscriptionStringInput | null,
   lastName?: ModelSubscriptionStringInput | null,
   isArchived?: ModelSubscriptionBooleanInput | null,
+  createdAt?: ModelSubscriptionStringInput | null,
+  updatedAt?: ModelSubscriptionStringInput | null,
   and?: Array< ModelSubscriptionUserFilterInput | null > | null,
   or?: Array< ModelSubscriptionUserFilterInput | null > | null,
+  userReviewsId?: ModelSubscriptionIDInput | null,
+  userSessionsId?: ModelSubscriptionIDInput | null,
+  userOrdersId?: ModelSubscriptionIDInput | null,
+  owner?: ModelStringInput | null,
 };
 
 export type ModelSubscriptionSessionFilterInput = {
   id?: ModelSubscriptionIDInput | null,
   userId?: ModelSubscriptionIDInput | null,
   deletedAt?: ModelSubscriptionStringInput | null,
+  createdAt?: ModelSubscriptionStringInput | null,
+  updatedAt?: ModelSubscriptionStringInput | null,
   and?: Array< ModelSubscriptionSessionFilterInput | null > | null,
   or?: Array< ModelSubscriptionSessionFilterInput | null > | null,
+  sessionCartItemsId?: ModelSubscriptionIDInput | null,
+  owner?: ModelStringInput | null,
 };
 
 export type ModelSubscriptionCartItemFilterInput = {
@@ -662,6 +721,8 @@ export type ModelSubscriptionCartItemFilterInput = {
   sessionId?: ModelSubscriptionIDInput | null,
   productId?: ModelSubscriptionIDInput | null,
   quantity?: ModelSubscriptionIntInput | null,
+  createdAt?: ModelSubscriptionStringInput | null,
+  updatedAt?: ModelSubscriptionStringInput | null,
   and?: Array< ModelSubscriptionCartItemFilterInput | null > | null,
   or?: Array< ModelSubscriptionCartItemFilterInput | null > | null,
 };
@@ -671,8 +732,12 @@ export type ModelSubscriptionOrderFilterInput = {
   userId?: ModelSubscriptionIDInput | null,
   total?: ModelSubscriptionIntInput | null,
   status?: ModelSubscriptionStringInput | null,
+  createdAt?: ModelSubscriptionStringInput | null,
+  updatedAt?: ModelSubscriptionStringInput | null,
   and?: Array< ModelSubscriptionOrderFilterInput | null > | null,
   or?: Array< ModelSubscriptionOrderFilterInput | null > | null,
+  orderItemsId?: ModelSubscriptionIDInput | null,
+  owner?: ModelStringInput | null,
 };
 
 export type ModelSubscriptionOrderItemFilterInput = {
@@ -681,8 +746,11 @@ export type ModelSubscriptionOrderItemFilterInput = {
   productId?: ModelSubscriptionIDInput | null,
   quantity?: ModelSubscriptionIntInput | null,
   price?: ModelSubscriptionIntInput | null,
+  createdAt?: ModelSubscriptionStringInput | null,
+  updatedAt?: ModelSubscriptionStringInput | null,
   and?: Array< ModelSubscriptionOrderItemFilterInput | null > | null,
   or?: Array< ModelSubscriptionOrderItemFilterInput | null > | null,
+  owner?: ModelStringInput | null,
 };
 
 export type ArchiveProductMutationVariables = {

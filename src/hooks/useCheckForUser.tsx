@@ -28,6 +28,8 @@ const useCheckForUser = () => {
         status: AsyncProcessStatus.SUCCESS,
         value: { user: null },
       });
+    } finally {
+      console.log("userCheck: ", userCheck);
     }
   }, []);
 

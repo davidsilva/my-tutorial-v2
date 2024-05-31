@@ -1,4 +1,4 @@
-import { Product, User, Review, Session } from "./API";
+import { Product, User, Review, Session, CartItem } from "./API";
 import { AuthUser } from "aws-amplify/auth";
 
 export type SessionType = Session | null;
@@ -29,13 +29,15 @@ export interface AsyncProcessNone extends AsyncProcessBase {
   status: AsyncProcessStatus.NONE;
 }
 
-export interface AsyncProcessPending extends AsyncProcessBase {
+export interface AsyncProcessPending<T> extends AsyncProcessBase {
   status: AsyncProcessStatus.PENDING;
+  value?: T;
 }
 
-export interface AsyncProcessError<E> extends AsyncProcessBase {
+export interface AsyncProcessError<T, E> extends AsyncProcessBase {
   status: AsyncProcessStatus.ERROR;
   error: E;
+  value?: T;
 }
 
 export interface AsyncProcessSuccess<T> extends AsyncProcessBase {
@@ -45,8 +47,8 @@ export interface AsyncProcessSuccess<T> extends AsyncProcessBase {
 
 export type AsyncProcess<T, E> =
   | AsyncProcessNone
-  | AsyncProcessPending
-  | AsyncProcessError<E>
+  | AsyncProcessPending<T>
+  | AsyncProcessError<T, E>
   | AsyncProcessSuccess<T>;
 
 export interface SessionCheckResult {
@@ -56,6 +58,19 @@ export interface SessionCheckResult {
 export interface SessionCheckError {
   message: string;
 }
+
+export interface CartItemsResult {
+  items: CartItem[];
+}
+
+export interface CartItemsError {
+  message: string;
+}
+
+export type CartItemsAsyncProcess = AsyncProcess<
+  { items: CartItem[] },
+  CartItemsError
+>;
 
 export type UserWithReviews = User & {
   reviews?: {

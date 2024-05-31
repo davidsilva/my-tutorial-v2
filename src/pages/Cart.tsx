@@ -6,7 +6,7 @@ import { useEffect } from "react";
 
 const Cart = () => {
   const {
-    cartItems,
+    cartItemsProcess,
     removeFromCart,
     clearCart,
     incrementQuantity,
@@ -43,6 +43,10 @@ const Cart = () => {
     clearCart();
   };
 
+  if (cartItemsProcess.status !== "SUCCESS") {
+    return <div>Loading...</div>;
+  }
+
   return (
     <>
       <h1>Cart</h1>
@@ -57,7 +61,7 @@ const Cart = () => {
           </tr>
         </thead>
         <tbody>
-          {cartItems.map(
+          {cartItemsProcess.value.items.map(
             (item) =>
               item.product && (
                 <tr key={item.id}>

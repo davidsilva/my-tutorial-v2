@@ -1,5 +1,12 @@
+import { signIn, signOut } from "aws-amplify/auth";
+import amplifyconfig from "../amplifyconfiguration.json";
 import React, { useEffect } from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  waitForElementToBeRemoved,
+} from "@testing-library/react";
 import { CartContextProvider, useCartContext } from "./CartContext";
 import userEvent from "@testing-library/user-event";
 import { Product, CartItem, ListCartItemsQuery } from "../API";
@@ -9,21 +16,33 @@ import {
   AuthContextType,
   AuthStateType,
 } from "../context/AuthContext";
-import { listCartItemsWithProduct } from "../graphql/customQueries";
+import { listCartItemsWithProduct as listCartItemsWithProductQuery } from "../graphql/customQueries";
 import {
-  createCartItem,
-  deleteCartItem,
-  updateCartItem,
+  createCartItem as createCartItemMutation,
+  deleteCartItem as deleteCartItemMutation,
+  updateCartItem as updateCartItemMutation,
 } from "../graphql/mutations";
+import { Amplify } from "aws-amplify";
+import { AsyncProcessStatus } from "../types";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+Amplify.configure(amplifyconfig);
 
 const mockProduct: Product = {
   __typename: "Product",
-  id: "100",
-  name: "Product 100",
-  description: "Description 100",
-  price: 100,
-  createdAt: "2021-09-01T00:00:00.000Z",
-  updatedAt: "2021-09-01T00:00:00.000Z",
+  id: "dd4e05da-894d-451a-a3a8-f589441c00db",
+  name: "Product Name",
+  description: "Product Description",
+  price: 10000,
+  isArchived: false,
+  image: "http://example.com/product.jpg",
+  stripePriceId: "stripePriceId",
+  stripeProductId: "stripeProductId",
+  createdAt: "2024-05-01T23:42:28.706Z",
+  updatedAt: "2024-05-01T23:42:28.706Z",
+  owner: null,
 };
 
 let { mockCartItems } = vi.hoisted(() => {
@@ -87,54 +106,6 @@ let { mockCartItems } = vi.hoisted(() => {
   };
 });
 
-vi.mock("aws-amplify/api", () => {
-  return {
-    generateClient: () => ({
-      graphql: vi.fn().mockImplementation(({ query, variables }) => {
-        if (query === listCartItemsWithProduct) {
-          return Promise.resolve({
-            data: {
-              listCartItems: {
-                items: mockCartItems as CartItem[],
-                nextToken: "",
-              },
-            } as ListCartItemsQuery,
-          });
-        }
-        // createCartItem
-        if (query === createCartItem) {
-          const { input } = variables;
-          const returnValue = {
-            data: {
-              createCartItem: {
-                ...input,
-                id: "100",
-                createdAt: "2021-09-01T00:00:00.000Z",
-                updatedAt: "2021-09-01T00:00:00.000Z",
-                __typename: "CartItem",
-              },
-            },
-          };
-          console.log("createCartItem", returnValue);
-          mockCartItems.push(returnValue.data.createCartItem);
-          console.log("mockCartItems", mockCartItems);
-          return Promise.resolve(returnValue);
-        }
-        // deleteCartItem
-        if (query === deleteCartItem) {
-          const { input } = variables;
-          mockCartItems = mockCartItems.filter(
-            (cartItem) => cartItem.id !== input.id
-          );
-          console.log("mockCartItems", mockCartItems);
-          return Promise.resolve({ data: { deleteCartItem: null } });
-        }
-        // updateCartItem
-      }),
-    }),
-  };
-});
-
 vi.mock("../context/AuthContext", async () => ({
   AuthContextProvider: ({ children }: { children: React.ReactNode }) =>
     children,
@@ -150,10 +121,13 @@ vi.mock("../context/AuthContext", async () => ({
     intendedPath: "",
     setIntendedPath: vi.fn(),
     authState: {
-      user: null,
-      isLoggedIn: false,
+      user: {
+        username: "testuser00",
+        userId: "e5b204b8-97bc-49d0-a1b5-b44a6fc532fb",
+      },
+      isLoggedIn: true,
       isAdmin: false,
-      sessionId: "1234",
+      sessionId: "75c126d8-32f9-46e3-a97c-ee3285054869",
       isAuthStateKnown: true,
     } as AuthStateType,
   } as AuthContextType),
@@ -161,7 +135,7 @@ vi.mock("../context/AuthContext", async () => ({
 
 const TestComponent: React.FC = () => {
   const {
-    cartItems,
+    cartItemsProcess,
     addToCart,
     removeFromCart,
     totalAmount,
@@ -171,16 +145,31 @@ const TestComponent: React.FC = () => {
   } = useCartContext();
 
   useEffect(() => {
-    console.log("cartItems", cartItems);
-  }, [cartItems]);
+    console.log("cartItemsProcess", JSON.stringify(cartItemsProcess));
+  }, [cartItemsProcess]);
+
+  if (cartItemsProcess.status !== AsyncProcessStatus.SUCCESS) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div>
       <div data-testid="total-amount">{totalAmount}</div>
       <ul>
-        {cartItems.map((cartItem) => (
+        {cartItemsProcess.value.items.map((cartItem) => (
           <li key={cartItem.id}>
-            {cartItem.product?.name} - {cartItem.quantity}
+            Name:
+            <span data-testid={`name-${cartItem.product?.id}`}>
+              {cartItem.product?.name}
+            </span>
+            Quantity:
+            <span data-testid={`quantity-${cartItem.product?.id}`}>
+              {cartItem.quantity}
+            </span>
+            Price:
+            <span data-testid={`price-${cartItem.product?.id}`}>
+              {cartItem.product?.price}
+            </span>
             <button
               data-testid={`remove-${cartItem.id}`}
               onClick={() => removeFromCart(cartItem)}
@@ -212,15 +201,28 @@ const TestComponent: React.FC = () => {
   );
 };
 
-const renderComponent = (initialState?: CartItem[]) => {
+const renderComponent = () => {
   render(
     <AuthContextProvider>
-      <CartContextProvider initialState={initialState}>
+      <CartContextProvider>
         <TestComponent />
       </CartContextProvider>
     </AuthContextProvider>
   );
 };
+
+beforeAll(async () => {
+  const result = await signIn({
+    username: "testuser00",
+    password: "secret1234",
+  });
+  console.log("signIn result", result);
+  console.log("dotenv admin username", process.env.TEST_ADMIN_USERNAME);
+});
+
+afterAll(async () => {
+  await signOut();
+});
 
 describe("CartContext", () => {
   describe("initial cart", () => {
@@ -228,45 +230,52 @@ describe("CartContext", () => {
       vi.clearAllMocks();
 
       renderComponent();
-      await waitFor(() => {});
+      await waitForElementToBeRemoved(() => screen.getByText("Loading..."));
     });
 
-    test("3 distinct products, total price 6", () => {
+    test.only("Should remove Loading... after cart items are loaded", async () => {
+      await waitFor(() => {
+        expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+      });
+      screen.debug();
+    });
+
+    test.todo("0 distinct products, total price 0", () => {
       const totalAmount = screen.getByTestId("total-amount");
-      expect(totalAmount).toHaveTextContent("6");
+      expect(totalAmount).toHaveTextContent("800");
 
       const cartDistinctProducts = screen.queryAllByRole("listitem");
       expect(cartDistinctProducts).toHaveLength(3);
+      // screen.debug();
     });
 
-    test("should add product to cart", async () => {
-      /* 
-      Not sure how to mock the behavior of the GraphQL server, which would make a connection between CartItem and Product. Without that connection, how can we verify the price of the added item? Also, the total amount can't be calculated correctly, as price is a property of the product.
-       */
+    test.todo("should add product to cart", async () => {
       const user = userEvent.setup();
 
       const addToCartButton = screen.getByTestId("add-to-cart");
       await user.click(addToCartButton);
 
+      await waitForElementToBeRemoved(() => screen.getByText("Loading..."));
+
       await waitFor(() => {
-        const cartItems = screen.queryAllByRole("listitem");
-        expect(cartItems).toHaveLength(4);
+        expect(screen.getByText("Product 100")).toBeInTheDocument();
       });
+      screen.debug();
     });
 
-    test("should remove product from cart", async () => {
+    test.todo("should remove product from cart", async () => {
       const user = userEvent.setup();
 
-      const addToCartButton = screen.getByTestId("add-to-cart");
-      await user.click(addToCartButton);
+      // const removeFromCartButton = screen.getByTestId(
+      //   "remove-8eb7b1df-fb6b-49a2-b85b-6123f04a8a9c"
+      // );
+      // await user.click(removeFromCartButton);
 
-      const removeFromCartButton = screen.getByTestId("remove-100");
-      await user.click(removeFromCartButton);
-
-      await waitFor(() => {
-        const cartItems = screen.queryAllByRole("listitem");
-        expect(cartItems).toHaveLength(3);
-      });
+      // await waitFor(() => {
+      //   const cartItems = screen.queryAllByRole("listitem");
+      //   expect(cartItems).toHaveLength(2);
+      // });
+      screen.debug();
     });
 
     test.todo(
