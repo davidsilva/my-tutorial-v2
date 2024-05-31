@@ -1,7 +1,5 @@
 import { graphql, HttpResponse } from "msw";
 
-const allCartItemsWithProduct = new Map([]);
-
 const mockListCartItemsWithProduct = {
   data: {
     listCartItems: {
